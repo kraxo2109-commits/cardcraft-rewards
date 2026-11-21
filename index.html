@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardcraft Rewards — Plataforma de Tarjetas Digitales</title>
+  <meta name="description" content="Cardcraft Rewards: tarjetas de lealtad, sellos, puntos, cashback y VIP para OBYNTZEK, Onírico by OBYNTZEK y negocios aliados." />
+  <meta name="theme-color" content="#09090b" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .wallet-card-shadow {
+      box-shadow: 0 22px 45px -12px rgba(9, 9, 11, 0.44), 0 0 0 1px rgba(255,255,255,0.12) inset;
+    }
+    .phone-frame {
+      box-shadow: 0 25px 60px -15px rgba(9, 9, 11, 0.48), 0 0 0 8px #09090b;
+    }
+    .stamp-pop {
+      animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.75); opacity: 0.4; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen antialiased">
+
+  <!-- ==================== CUSTOMER STANDALONE ANDROID WALLET VIEW (#/card/CODE) ==================== -->
+  <div id="customerCardView" class="hidden min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold tracking-wider uppercase text-indigo-300">Cardcraft Rewards · Android Pass</span>
+        <button id="btnExitCustomerView" type="button" class="text-xs font-semibold text-slate-300 hover:text-white bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-lg transition">
+          ← Volver
+        </button>
+      </div>
+      <div id="standaloneCardSlot"></div>
+      <div class="space-y-2">
+        <button id="btnAddAndroidWallet" type="button" class="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-black border border-white/25 hover:bg-zinc-900 text-white text-xs font-bold shadow-lg transition">
+          <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i> Agregar a Google Wallet (Android)
+        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btnStandaloneFlip" type="button" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition">
+            Ver reverso ↻
+          </button>
+          <button id="btnStandalonePng" type="button" class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition">
+            Guardar PNG
+          </button>
+        </div>
+      </div>
+      <p class="text-[11px] text-center text-slate-400">
+        También puedes tocar el menú de Chrome en Android → <strong>Agregar a la pantalla principal</strong> para llevar tu tarjeta como app.
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN APP SHELL ==================== -->
+  <div id="mainAppShell">
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-900 via-indigo-900 to-violet-600 text-white flex items-center justify-center shadow-sm shrink-0">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 truncate">Cardcraft Rewards</h1>
+              <span id="syncModeBadge" class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Modo Local</span>
+            </div>
+            <p id="roleSubtitle" class="text-[11px] text-slate-500 truncate">Super Admin · Control total multi-negocio</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 min-w-0">
+          <div id="adminBizControls" class="flex items-center gap-2 min-w-0">
+            <label for="businessSelect" class="sr-only">Negocio activo</label>
+            <select id="businessSelect" class="text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-800 rounded-lg px-2.5 py-2 border border-slate-200 max-w-[145px] sm:max-w-[220px] truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+            <button id="btnNewBusiness" type="button" class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition shrink-0">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span class="hidden md:inline">Nuevo negocio</span>
+            </button>
+          </div>
+
+          <button id="btnOpenRoleModal" type="button" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold transition shrink-0">
+            <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i>
+            <span id="roleBtnText" class="hidden sm:inline">Super Admin</span>
+          </button>
+        </div>
+      </div>
+
+      <nav id="mainNav" class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 overflow-x-auto custom-scroll border-t border-slate-100 bg-white">
+        <button type="button" data-tab="designer" class="nav-tab admin-only flex items-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap">
+          <i data-lucide="palette" class="w-4 h-4"></i> Diseñador
+        </button>
+        <button type="button" data-tab="terminal" class="nav-tab flex items-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap">
+          <i data-lucide="qr-code" class="w-4 h-4"></i> Caja / Sellar
+        </button>
+        <button type="button" data-tab="customers" class="nav-tab flex items-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap">
+          <i data-lucide="users" class="w-4 h-4"></i> Clientes (<span id="navCustomerCount">0</span>)
+        </button>
+        <button type="button" data-tab="requests" class="nav-tab admin-only flex items-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap">
+          <i data-lucide="store" class="w-4 h-4"></i> Negocios y Altas <span id="navReqBadge" class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 text-indigo-700 font-bold">0</span>
+        </button>
+        <button type="button" data-tab="analytics" class="nav-tab flex items-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Estadísticas y Seguridad
+        </button>
+      </nav>
+    </header>
+
+    <div id="businessModeBanner" class="hidden bg-indigo-950 text-indigo-100 text-xs px-4 py-2">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+        <span>Panel exclusivo de <strong id="bannerBizName"></strong>. Solo ves tus clientes, tu caja y tus estadísticas.</span>
+        <button type="button" id="btnBackToAdmin" class="underline font-semibold text-white hover:text-indigo-200">Cambiar cuenta</button>
+      </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <!-- ==================== TAB 1: DESIGNER (ADMIN ONLY) ==================== -->
+      <section id="tab-designer" class="tab-panel">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="lg:col-span-7 space-y-5">
+            <!-- Program Type Visual Selector -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h2 class="text-sm font-bold text-slate-900">1. Elige el tipo de tarjeta (cada uno tiene diseño distinto)</h2>
+                  <p class="text-xs text-slate-500">Adapta el formato según lo que necesite cada negocio.</p>
+                </div>
+                <button id="btnDeleteBusiness" type="button" class="text-xs font-medium text-rose-600 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition">
+                  Eliminar negocio
+                </button>
+              </div>
+              <div id="cardTypeGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-4">
+              <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-600"></i> 2. Datos del Negocio, Premio y PIN
+              </h2>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label for="inpBizName" class="block text-xs font-semibold text-slate-700 mb-1">Nombre del negocio</label>
+                  <input id="inpBizName" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label for="inpCardTitle" class="block text-xs font-semibold text-slate-700 mb-1">Título de la tarjeta</label>
+                  <input id="inpCardTitle" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label for="inpReward" class="block text-xs font-semibold text-slate-700 mb-1">Recompensa / Beneficio</label>
+                  <input id="inpReward" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label for="inpAddress" class="block text-xs font-semibold text-slate-700 mb-1">Sucursal / Instagram / WhatsApp</label>
+                  <input id="inpAddress" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <label for="inpGoal" class="block text-xs font-semibold text-slate-700 mb-1" id="lblGoal">Meta de sellos</label>
+                  <input id="inpGoal" type="number" min="1" max="10000" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div id="pctFieldWrap">
+                  <label for="inpPercent" class="block text-xs font-semibold text-slate-700 mb-1" id="lblPercent">Porcentaje (%)</label>
+                  <input id="inpPercent" type="number" min="1" max="100" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label for="inpBizPin" class="block text-xs font-semibold text-slate-700 mb-1">PIN de acceso del negocio</label>
+                  <input id="inpBizPin" type="text" maxlength="8" placeholder="Ej. 4829" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+              </div>
+
+              <div>
+                <label for="inpTerms" class="block text-xs font-semibold text-slate-700 mb-1">Términos y vigencia (reverso)</label>
+                <input id="inpTerms" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+            </div>
+
+            <!-- Visual Styling + Full Icon Picker + Custom Stamp Image -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-4">
+              <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="brush" class="w-4 h-4 text-indigo-600"></i> 3. Colores, Logo e Ícono de Sello / Check
+              </h2>
+
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label for="inpBgColor" class="block text-xs font-semibold text-slate-700 mb-1">Fondo</label>
+                  <div class="flex items-center gap-2 border border-slate-300 rounded-xl px-2 py-1.5">
+                    <input id="inpBgColor" type="color" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
+                    <span id="hexBg" class="text-[11px] font-mono text-slate-600"></span>
+                  </div>
+                </div>
+                <div>
+                  <label for="inpAccentColor" class="block text-xs font-semibold text-slate-700 mb-1">Acento</label>
+                  <div class="flex items-center gap-2 border border-slate-300 rounded-xl px-2 py-1.5">
+                    <input id="inpAccentColor" type="color" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
+                    <span id="hexAccent" class="text-[11px] font-mono text-slate-600"></span>
+                  </div>
+                </div>
+                <div>
+                  <label for="inpTextColor" class="block text-xs font-semibold text-slate-700 mb-1">Texto</label>
+                  <div class="flex items-center gap-2 border border-slate-300 rounded-xl px-2 py-1.5">
+                    <input id="inpTextColor" type="color" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
+                    <span id="hexText" class="text-[11px] font-mono text-slate-600"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Upload Logo & Upload Custom Stamp Image -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800">Logo del negocio</span>
+                    <button id="btnClearLogo" type="button" class="text-[11px] text-rose-600 font-semibold hidden">Quitar</button>
+                  </div>
+                  <label class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 cursor-pointer transition">
+                    <i data-lucide="image" class="w-4 h-4 text-indigo-600"></i> Subir logo desde celular/PC
+                    <input id="inpLogoFile" type="file" accept="image/*" class="hidden" />
+                  </label>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800">Imagen propia para el sello</span>
+                    <button id="btnClearStampImg" type="button" class="text-[11px] text-rose-600 font-semibold hidden">Usar ícono</button>
+                  </div>
+                  <label class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 cursor-pointer transition">
+                    <i data-lucide="upload" class="w-4 h-4 text-violet-600"></i> Subir imagen para el check/sello
+                    <input id="inpStampImgFile" type="file" accept="image/*" class="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              <!-- Full Icon Picker -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-slate-700">Galería de íconos (o escribe cualquier emoji)</label>
+                  <input id="inpCustomEmoji" type="text" maxlength="4" placeholder="Otro emoji" class="w-24 text-center rounded-lg border border-slate-300 px-2 py-1 text-xs" />
+                </div>
+                <div id="iconGallery" class="grid grid-cols-8 sm:grid-cols-12 gap-1.5"></div>
+              </div>
+
+              <div class="flex items-center justify-between pt-1">
+                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input id="inpGradient" type="checkbox" class="rounded text-indigo-600 w-4 h-4" />
+                  Efecto degradado metálico
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Android / Google Wallet Preview -->
+          <div class="lg:col-span-5 lg:sticky lg:top-32 space-y-4">
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Vista previa Android</span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Google Wallet (Gratis)
+                </span>
+              </div>
+
+              <div class="max-w-[330px] mx-auto bg-zinc-950 rounded-[2.2rem] p-3.5 phone-frame">
+                <div class="w-20 h-3.5 bg-black rounded-full mx-auto mb-3"></div>
+                <div id="walletCardPreview"></div>
+                <div class="mt-3 flex items-center justify-between px-2 text-[11px] text-slate-400">
+                  <span>Google Wallet Pass</span>
+                  <button id="btnFlipPreview" type="button" class="text-indigo-400 hover:text-indigo-300 font-semibold">Ver reverso ↻</button>
+                </div>
+              </div>
+
+              <div class="mt-5 pt-4 border-t border-slate-100 space-y-3">
+                <div class="flex items-center justify-between gap-2 text-xs">
+                  <span class="font-semibold text-slate-700">Probar avance en vista previa:</span>
+                  <div class="flex items-center gap-1.5">
+                    <button id="btnSimMinus" type="button" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-slate-700">-</button>
+                    <span id="simProgressVal" class="w-10 text-center font-bold text-indigo-600">0</span>
+                    <button id="btnSimPlus" type="button" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-slate-700">+</button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <button id="btnQuickIssue" type="button" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> Emitir a cliente
+                  </button>
+                  <button id="btnDownloadSamplePng" type="button" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold shadow-sm transition">
+                    <i data-lucide="download" class="w-4 h-4"></i> Bajar PNG
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: TERMINAL / CAJA ==================== -->
+      <section id="tab-terminal" class="tab-panel hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="lg:col-span-7 space-y-5">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 class="text-base font-bold text-slate-900">Caja / Sellar — <span id="termBizLabel"></span></h2>
+                  <p class="text-xs text-slate-500">Busca al cliente por código, nombre o WhatsApp para sumar sellos/puntos o canjear.</p>
+                </div>
+                <button id="btnTerminalNewCustomer" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+                  <i data-lucide="user-plus" class="w-4 h-4"></i> Alta cliente
+                </button>
+              </div>
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input id="terminalSearch" type="text" placeholder="Buscar por código, nombre o teléfono..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+              <div id="terminalQuickList" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto custom-scroll pr-1"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <h3 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <i data-lucide="history" class="w-4 h-4 text-indigo-600"></i> Últimos movimientos
+              </h3>
+              <div id="terminalHistory" class="space-y-2 max-h-60 overflow-y-auto custom-scroll"></div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5">
+            <div id="terminalActivePanel" class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: CUSTOMERS CRM ==================== -->
+      <section id="tab-customers" class="tab-panel hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Clientes de <span id="crmBizLabel"></span></h2>
+              <p class="text-xs text-slate-500">Envía tarjetas por WhatsApp, descarga en PNG o abre la vista Android del cliente.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btnExportCsv" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exportar CSV
+              </button>
+              <button id="btnOpenAddCustomer" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm">
+                <i data-lucide="user-plus" class="w-4 h-4"></i> Emitir tarjeta
+              </button>
+            </div>
+          </div>
+          <div class="mb-4">
+            <input id="crmSearch" type="text" placeholder="Filtrar por nombre, código o WhatsApp..." class="w-full sm:max-w-md px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500">
+                  <th class="py-2.5 pr-3">Cliente</th>
+                  <th class="py-2.5 px-3">Código</th>
+                  <th class="py-2.5 px-3">Progreso</th>
+                  <th class="py-2.5 px-3">Premios</th>
+                  <th class="py-2.5 pl-3 text-right">Entregar / Ver</th>
+                </tr>
+              </thead>
+              <tbody id="crmTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 4: BUSINESSES & ONBOARDING (ADMIN ONLY) ==================== -->
+      <section id="tab-requests" class="tab-panel hidden space-y-5">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-base font-bold text-slate-900">Negocios Activos</h2>
+                <p class="text-xs text-slate-500">Asigna o edita el PIN de cada comercio desde el Diseñador.</p>
+              </div>
+              <button type="button" id="btnAddBizFromList" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">+ Nuevo negocio</button>
+            </div>
+            <div id="adminBizList" class="space-y-2.5"></div>
+          </div>
+
+          <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Solicitudes de Alta</h2>
+              <p class="text-xs text-slate-500">Los negocios que se registren desde la app aparecen aquí para que tú los apruebes.</p>
+            </div>
+            <div id="pendingReqList" class="space-y-2.5"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 5: ANALYTICS & SECURITY ==================== -->
+      <section id="tab-analytics" class="tab-panel hidden space-y-5">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="kpiGrid"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-900 mb-3">Actividad de clientes</h3>
+            <div class="relative h-72">
+              <canvas id="activityChart"></canvas>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-4">
+            <!-- Admin PIN Config (Admin Only) -->
+            <div id="adminSecurityCard" class="admin-only bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="lock" class="w-4 h-4 text-indigo-600"></i> Seguridad del Super Admin
+              </h3>
+              <p class="text-xs text-slate-500">Cambia aquí tu PIN privado de administrador (se guarda automáticamente).</p>
+              <form id="formChangeAdminPin" class="flex gap-2">
+                <input id="inpNewAdminPin" type="password" required minlength="4" maxlength="12" placeholder="Nuevo PIN (4-12 dígitos)" class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono outline-none focus:ring-2 focus:ring-indigo-500" />
+                <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">Guardar PIN</button>
+              </form>
+            </div>
+
+            <!-- Cloud & Backup -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="cloud" class="w-4 h-4 text-indigo-600"></i> Nube Supabase y Respaldo
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed" id="cloudStatusText"></p>
+              <div class="space-y-2">
+                <button id="btnBackupJson" type="button" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition">
+                  <i data-lucide="download" class="w-4 h-4"></i> Descargar respaldo (.json)
+                </button>
+                <label class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition">
+                  <i data-lucide="upload" class="w-4 h-4"></i> Restaurar respaldo (.json)
+                  <input id="inpRestoreJson" type="file" accept="application/json" class="hidden" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== MODAL: ROLE LOGIN (ZERO VISIBLE PIN HINTS) ==================== -->
+  <div id="modalRole" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900">Acceso — Cardcraft Rewards</h3>
+        <button type="button" data-close-modal="modalRole" class="p-1 text-slate-400 hover:text-slate-700 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+        <button type="button" id="roleTabAdmin" class="py-2 rounded-lg transition">Super Admin</button>
+        <button type="button" id="roleTabBiz" class="py-2 rounded-lg transition">Soy Negocio</button>
+        <button type="button" id="roleTabApply" class="py-2 rounded-lg transition">Registrarme</button>
+      </div>
+
+      <form id="formLoginAdmin" class="space-y-3">
+        <p class="text-xs text-slate-500">Ingresa tu clave privada de administrador para controlar toda la plataforma.</p>
+        <div>
+          <label for="inpAdminPin" class="block text-xs font-semibold text-slate-700 mb-1">PIN de Administrador</label>
+          <input id="inpAdminPin" type="password" required placeholder="Ingresa tu PIN" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold">Entrar como Super Admin</button>
+      </form>
+
+      <form id="formLoginBiz" class="space-y-3 hidden">
+        <p class="text-xs text-slate-500">Accede al panel exclusivo de tu negocio para sellar tarjetas y ver tus métricas.</p>
+        <div>
+          <label for="selLoginBiz" class="block text-xs font-semibold text-slate-700 mb-1">Selecciona tu negocio</label>
+          <select id="selLoginBiz" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white"></select>
+        </div>
+        <div>
+          <label for="inpLoginBizPin" class="block text-xs font-semibold text-slate-700 mb-1">PIN de acceso del negocio</label>
+          <input id="inpLoginBizPin" type="password" required placeholder="Ingresa tu PIN asignado" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Entrar a mi Negocio</button>
+      </form>
+
+      <form id="formApplyBiz" class="space-y-3 hidden">
+        <p class="text-xs text-slate-500">Solicita dar de alta tu comercio en Cardcraft Rewards.</p>
+        <div>
+          <label for="reqBizName" class="block text-xs font-semibold text-slate-700 mb-1">Nombre de tu negocio *</label>
+          <input id="reqBizName" type="text" required placeholder="Ej. Café del Puerto" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label for="reqOwner" class="block text-xs font-semibold text-slate-700 mb-1">Tu nombre *</label>
+            <input id="reqOwner" type="text" required placeholder="Tu nombre" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label for="reqPhone" class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp *</label>
+            <input id="reqPhone" type="text" required placeholder="10 dígitos" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label for="reqGoalDesc" class="block text-xs font-semibold text-slate-700 mb-1">Tipo de tarjeta o premio que deseas</label>
+          <input id="reqGoalDesc" type="text" placeholder="Ej. 8 sellos = 1 servicio gratis" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">Enviar solicitud</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ADD CUSTOMER ==================== -->
+  <div id="modalCustomer" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900">Emitir Tarjeta a Cliente</h3>
+        <button type="button" data-close-modal="modalCustomer" class="p-1 text-slate-400 hover:text-slate-700 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="formCustomer" class="space-y-3">
+        <div>
+          <label for="custName" class="block text-xs font-semibold text-slate-700 mb-1">Nombre completo *</label>
+          <input id="custName" type="text" required placeholder="Nombre del cliente" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="custPhone" class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp (10 dígitos) *</label>
+            <input id="custPhone" type="text" required placeholder="6691234567" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label for="custInitial" class="block text-xs font-semibold text-slate-700 mb-1">Saldo / Sellos iniciales</label>
+            <input id="custInitial" type="number" min="0" value="1" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" data-close-modal="modalCustomer" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700">Cancelar</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">Crear tarjeta y QR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: NEW BUSINESS ==================== -->
+  <div id="modalBusiness" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900">Dar de Alta Nuevo Negocio</h3>
+        <button type="button" data-close-modal="modalBusiness" class="p-1 text-slate-400 hover:text-slate-700 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="formBusiness" class="space-y-3">
+        <div>
+          <label for="newBizName" class="block text-xs font-semibold text-slate-700 mb-1">Nombre del negocio *</label>
+          <input id="newBizName" type="text" required placeholder="Nombre del comercio" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="newBizType" class="block text-xs font-semibold text-slate-700 mb-1">Tipo de tarjeta</label>
+            <select id="newBizType" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white">
+              <option value="stamps">Sellos</option>
+              <option value="points">Puntos</option>
+              <option value="cashback">Cashback (%)</option>
+              <option value="coupon">VIP / Descuento (%)</option>
+            </select>
+          </div>
+          <div>
+            <label for="newBizPin" class="block text-xs font-semibold text-slate-700 mb-1">PIN del negocio</label>
+            <input id="newBizPin" type="text" required maxlength="8" placeholder="Ej. 4829" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" data-close-modal="modalBusiness" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700">Cancelar</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">Crear negocio</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CUSTOMER PASS ==================== -->
+  <div id="modalPass" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/65 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900">Entregar Tarjeta al Cliente</h3>
+        <button type="button" data-close-modal="modalPass" class="p-1 text-slate-400 hover:text-slate-700 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="modalPassContainer"></div>
+      <div class="grid grid-cols-3 gap-2">
+        <button id="btnModalPassWa" type="button" class="inline-flex items-center justify-center gap-1 px-2.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">
+          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
+        </button>
+        <button id="btnModalPassPng" type="button" class="inline-flex items-center justify-center gap-1 px-2.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> PNG
+        </button>
+        <button id="btnModalPassLink" type="button" class="inline-flex items-center justify-center gap-1 px-2.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">
+          <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Android
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden items-center gap-2 bg-zinc-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl"></div>
+  <canvas id="exportCanvas" width="900" height="1320" class="hidden"></canvas>
+
+  <script>
+    // =========================================================================
+    // CONFIGURACIÓN DE SUPABASE (Pega tus 2 datos públicos aquí al subir a GitHub)
+    // =========================================================================
+    const SUPABASE_URL = 'https://qpirmydytfntefqqhyxw.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_lKmF7aqlZJ-tF3iHbiQjmQ_w97S04lh';
+    // Opcional v2: URL de tu función serverless de Google Wallet (Netlify/Supabase)
+    const GOOGLE_WALLET_ENDPOINT = '';
+
+    const STORAGE_KEY = 'cardcraft_rewards_v3_clean';
+    let sb = null;
+    let deferredInstallPrompt = null;
+
+    const CARD_TYPES = [
+      { id: 'stamps', label: 'Sellos', desc: 'Cuadrícula visual', icon: 'stamp' },
+      { id: 'points', label: 'Puntos', desc: 'Barra + puntaje', icon: 'coins' },
+      { id: 'cashback', label: 'Cashback %', desc: 'Monedero en %', icon: 'percent' },
+      { id: 'coupon', label: 'VIP / Frecuente', desc: 'Membresía élite', icon: 'crown' }
+    ];
+
+    const ICON_GALLERY = [
+      '👕', '🧦', '👟', '🧢', '🕶️', '🛍️', '🔥', '⚡',
+      '🌙', '✨', '⭐', '👑', '💎', '🎯', '✓', '🖤',
+      '☕', '🍔', '🍕', '🌮', '🍦', '🍰', '🍸', '🧋',
+      '✂️', '💈', '💅', '💄', '💆', '💪', '🧘', '🐾',
+      '🚗', '🎁', '🎟️', '🏆'
+    ];
+
+    function createDefaultState() {
+      return {
+        role: 'admin',
+        adminPin: '0000',
+        activeBusinessId: 'biz_obyntzek',
+        activeTab: 'designer',
+        previewFlipped: false,
+        simProgress: 3,
+        selectedCustomerId: null,
+        businesses: [
+          {
+            id: 'biz_obyntzek',
+            name: 'OBYNTZEK',
+            cardType: 'stamps',
+            cardTitle: 'Tarjeta de Regalo — Playeras',
+            reward: '1 Playera Gratis',
+            goal: 5,
+            percent: 10,
+            pin: '1234',
+            address: '@obyntzek · Playeras Personalizadas',
+            bgColor: '#09090B',
+            accentColor: '#A855F7',
+            textColor: '#FFFFFF',
+            stampIcon: '👕',
+            stampImageUrl: '',
+            logoDataUrl: '',
+            gradient: true,
+            terms: '1 sello por cada playera comprada. Al juntar 5 sellos ganas 1 playera gratis.'
+          },
+          {
+            id: 'biz_onirico',
+            name: 'Onírico by OBYNTZEK',
+            cardType: 'stamps',
+            cardTitle: 'Tarjeta de Regalo — Calcetas',
+            reward: '1 Par de Calcetines Gratis',
+            goal: 10,
+            percent: 10,
+            pin: '5678',
+            address: '@onirico.obyntzek · Tienda de Calcetas',
+            bgColor: '#1E1B4B',
+            accentColor: '#38BDF8',
+            textColor: '#FFFFFF',
+            stampIcon: '🧦',
+            stampImageUrl: '',
+            logoDataUrl: '',
+            gradient: true,
+            terms: '1 sello por cada par de calcetines. Junta 10 pares y te regalamos 1 par más.'
+          }
+        ],
+        customers: [],
+        transactions: [],
+        requests: []
+      };
+    }
+
+    let state = createDefaultState();
+    let activityChartInstance = null;
+    let modalPassCustomerId = null;
+    let standaloneCust = null;
+    let standaloneFlipped = false;
+
+    function initSupabase() {
+      if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
+        try {
+          sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const badge = document.getElementById('syncModeBadge');
+          badge.textContent = 'Nube Supabase';
+          badge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+        } catch (e) { sb = null; }
+      }
+    }
+
+    async function syncFromSupabase() {
+      if (!sb) return;
+      try {
+        const [bRes, cRes, tRes, rRes, sRes] = await Promise.all([
+          sb.from('businesses').select('*'),
+          sb.from('customers').select('*'),
+          sb.from('transactions').select('*').order('created_at', { ascending: false }).limit(60),
+          sb.from('business_requests').select('*'),
+          sb.from('app_settings').select('*').eq('key', 'admin_pin').maybeSingle()
+        ]);
+        if (bRes.data && bRes.data.length) state.businesses = bRes.data.map(b => ({
+          id: b.id, name: b.name, cardType: b.card_type, cardTitle: b.card_title, reward: b.reward,
+          goal: b.goal, percent: b.percent || 10, pin: b.pin, address: b.address, bgColor: b.bg_color,
+          accentColor: b.accent_color, textColor: b.text_color, stampIcon: b.stamp_icon,
+          stampImageUrl: b.stamp_image_url || '', logoDataUrl: b.logo_data_url || '',
+          gradient: b.gradient, terms: b.terms
+        }));
+        if (cRes.data) state.customers = cRes.data.map(c => ({
+          id: c.id, businessId: c.business_id, code: c.code, name: c.name, phone: c.phone,
+          progress: c.progress, totalEarned: c.total_earned, redemptions: c.redemptions, lastVisit: c.last_visit
+        }));
+        if (tRes.data) state.transactions = tRes.data.map(t => ({
+          id: t.id, businessId: t.business_id, customerName: t.customer_name, type: t.type, amount: t.amount, date: t.date_label
+        }));
+        if (rRes.data) state.requests = rRes.data.map(r => ({
+          id: r.id, businessName: r.business_name, owner: r.owner, phone: r.phone, goalDesc: r.goal_desc, date: r.date_label
+        }));
+        if (sRes.data && sRes.data.value) state.adminPin = sRes.data.value;
+        saveLocalState();
+        renderAll();
+      } catch (e) {}
+    }
+
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.businesses) && parsed.businesses.length > 0) {
+            state = Object.assign(createDefaultState(), parsed);
+          }
+        }
+      } catch (e) {}
+    }
+
+    function saveLocalState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    async function persistBusiness(biz) {
+      saveLocalState();
+      if (!sb) return;
+      try {
+        await sb.from('businesses').upsert({
+          id: biz.id, name: biz.name, card_type: biz.cardType, card_title: biz.cardTitle,
+          reward: biz.reward, goal: biz.goal, percent: biz.percent || 10, pin: biz.pin, address: biz.address,
+          bg_color: biz.bgColor, accent_color: biz.accentColor, text_color: biz.textColor,
+          stamp_icon: biz.stampIcon, stamp_image_url: biz.stampImageUrl || '',
+          logo_data_url: biz.logoDataUrl || '', gradient: biz.gradient, terms: biz.terms
+        });
+      } catch (e) {}
+    }
+
+    async function persistCustomer(c) {
+      saveLocalState();
+      if (!sb) return;
+      try {
+        await sb.from('customers').upsert({
+          id: c.id, business_id: c.businessId, code: c.code, name: c.name, phone: c.phone,
+          progress: c.progress, total_earned: c.totalEarned, redemptions: c.redemptions, last_visit: c.lastVisit
+        });
+      } catch (e) {}
+    }
+
+    async function persistTransaction(t) {
+      saveLocalState();
+      if (!sb) return;
+      try {
+        await sb.from('transactions').insert({
+          id: t.id, business_id: t.businessId, customer_name: t.customerName, type: t.type, amount: t.amount, date_label: t.date
+        });
+      } catch (e) {}
+    }
+
+    async function persistAdminPin(newPin) {
+      state.adminPin = newPin;
+      saveLocalState();
+      if (!sb) return;
+      try {
+        await sb.from('app_settings').upsert({ key: 'admin_pin', value: newPin });
+      } catch (e) {}
+    }
+
+    function getActiveBusiness() {
+      return state.businesses.find(b => b.id === state.activeBusinessId) || state.businesses[0];
+    }
+
+    function getBusinessCustomers(bizId = state.activeBusinessId) {
+      return state.customers.filter(c => c.businessId === bizId);
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.classList.add('hidden'); el.classList.remove('flex'); }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+    }
+
+    function buildFallbackQrMatrix(text, n = 21) {
+      const m = Array.from({ length: n }, () => Array(n).fill(false));
+      const drawFinder = (r0, c0) => {
+        for (let r = 0; r < 7; r++) {
+          for (let c = 0; c < 7; c++) {
+            const border = r === 0 || r === 6 || c === 0 || c === 6;
+            const inner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+            m[r0 + r][c0 + c] = border || inner;
+          }
+        }
+      };
+      drawFinder(0, 0); drawFinder(0, n - 7); drawFinder(n - 7, 0);
+      let seed = 2166136261;
+      for (let i = 0; i < text.length; i++) { seed ^= text.charCodeAt(i); seed = Math.imul(seed, 16777619) >>> 0; }
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          const inFinder = (r < 8 && c < 8) || (r < 8 && c >= n - 8) || (r >= n - 8 && c < 8);
+          if (!inFinder) { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; m[r][c] = (seed & 1) === 1; }
+        }
+      }
+      return m;
+    }
+
+    function generateQrSvg(text, size = 104) {
+      try {
+        if (typeof qrcode !== 'undefined') {
+          const qr = qrcode(0, 'M');
+          qr.addData(String(text));
+          qr.make();
+          return qr.createSvgTag({ cellSize: Math.max(2, Math.floor(size / 29)), margin: 2, scalable: true });
+        }
+      } catch (e) {}
+      const n = 21, m = buildFallbackQrMatrix(String(text), n);
+      let rects = '';
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (m[r][c]) rects += `<rect x="${c + 1}" y="${r + 1}" width="1" height="1" fill="#0f172a"/>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + 2} ${n + 2}" width="${size}" height="${size}" class="w-full h-full">${rects}</svg>`;
+    }
+
+    function getUnitLabel(cardType) {
+      if (cardType === 'points') return 'pts';
+      if (cardType === 'cashback') return 'MXN';
+      if (cardType === 'coupon') return 'visitas';
+      return 'sellos';
+    }
+
+    function buildWalletCardHtml(biz, customerObj, flipped = false) {
+      const progress = customerObj ? customerObj.progress : state.simProgress;
+      const goal = Math.max(1, Number(biz.goal) || 5);
+      const pctVal = Math.max(1, Number(biz.percent) || 10);
+      const pctBar = Math.min(100, Math.round((progress / goal) * 100));
+      const unit = getUnitLabel(biz.cardType);
+      const code = customerObj ? customerObj.code : 'OBY-001';
+      const holder = customerObj ? customerObj.name : 'Cliente';
+      const bgStyle = biz.gradient
+        ? `background: linear-gradient(135deg, ${biz.bgColor} 0%, ${biz.bgColor}ee 58%, ${biz.accentColor}55 100%); color: ${biz.textColor};`
+        : `background-color: ${biz.bgColor}; color: ${biz.textColor};`;
+
+      if (flipped) {
+        return `
+          <div class="rounded-3xl p-5 wallet-card-shadow transition-all min-h-[395px] flex flex-col justify-between" style="${bgStyle}">
+            <div>
+              <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider opacity-80">Reverso · Google Wallet</span>
+                <span class="text-[11px] font-mono opacity-80">${escapeHtml(code)}</span>
+              </div>
+              <div class="space-y-2.5 text-xs">
+                <div><div class="opacity-65 text-[10px] uppercase">Negocio</div><div class="font-bold">${escapeHtml(biz.name)}</div></div>
+                <div><div class="opacity-65 text-[10px] uppercase">Beneficio</div><div class="font-semibold">${escapeHtml(biz.reward)}</div></div>
+                <div><div class="opacity-65 text-[10px] uppercase">Contacto / Sucursal</div><div>${escapeHtml(biz.address || 'Principal')}</div></div>
+                <div><div class="opacity-65 text-[10px] uppercase">Reglas</div><div class="opacity-90 leading-relaxed">${escapeHtml(biz.terms || '')}</div></div>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-white/15 text-[10px] opacity-75 flex justify-between">
+              <span>Cardcraft Rewards · Android</span>
+              <span>${escapeHtml(code)}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const logoHtml = biz.logoDataUrl
+        ? `<img src="${biz.logoDataUrl}" alt="Logo" class="w-9 h-9 rounded-full object-cover bg-white/15 border border-white/25 shrink-0" />`
+        : `<div class="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0" style="background-color:${biz.accentColor};">${escapeHtml(biz.stampIcon)}</div>`;
+
+      let topRightBadge = `<div class="text-right shrink-0"><div class="text-[9px] uppercase opacity-70">${biz.cardType === 'stamps' ? 'Sellos' : 'Avance'}</div><div class="text-xs font-extrabold">${progress}/${goal}</div></div>`;
+      let centerBlock = '';
+
+      if (biz.cardType === 'stamps') {
+        const displayGoal = Math.min(12, Math.max(2, goal));
+        const cols = displayGoal <= 5 ? 'grid-cols-5' : (displayGoal <= 8 ? 'grid-cols-4' : 'grid-cols-5');
+        let cells = '';
+        for (let i = 0; i < displayGoal; i++) {
+          const filled = i < progress;
+          let innerStamp = '';
+          if (filled) {
+            innerStamp = biz.stampImageUrl
+              ? `<img src="${biz.stampImageUrl}" alt="Sello" class="w-full h-full object-cover rounded-full" />`
+              : escapeHtml(biz.stampIcon);
+          } else {
+            innerStamp = `<span class="text-[10px] opacity-45">${i + 1}</span>`;
+          }
+          cells += `
+            <div class="aspect-square rounded-full flex items-center justify-center text-sm font-bold overflow-hidden transition ${filled ? 'stamp-pop shadow-sm ring-2 ring-white/40' : 'border border-dashed border-white/30 bg-white/5'}"
+                 style="${filled ? `background-color: ${biz.accentColor}; color: #ffffff;` : ''}">
+              ${innerStamp}
+            </div>
+          `;
+        }
+        centerBlock = `<div class="grid ${cols} gap-2 my-3.5 p-2.5 rounded-2xl bg-black/25 border border-white/10">${cells}</div>`;
+      } else if (biz.cardType === 'points') {
+        topRightBadge = `<div class="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide shrink-0" style="background-color:${biz.accentColor}; color:#fff;">PUNTOS</div>`;
+        centerBlock = `
+          <div class="my-3.5 p-3.5 rounded-2xl bg-black/30 border border-white/15 space-y-2.5">
+            <div class="flex items-end justify-between">
+              <div>
+                <div class="text-[10px] uppercase tracking-wider opacity-70">Saldo acumulado</div>
+                <div class="text-3xl font-extrabold leading-none mt-0.5">${progress} <span class="text-xs font-semibold opacity-80">PTS</span></div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] opacity-70">Meta premio</div>
+                <div class="text-xs font-bold">${goal} PTS</div>
+              </div>
+            </div>
+            <div class="w-full h-2.5 rounded-full bg-white/15 overflow-hidden">
+              <div class="h-full rounded-full transition-all" style="width:${pctBar}%; background-color:${biz.accentColor};"></div>
+            </div>
+            <div class="text-[10px] opacity-85 flex justify-between">
+              <span>${pctBar}% completado</span>
+              <span>${progress >= goal ? '¡Listo para canjear!' : `Faltan ${Math.max(0, goal - progress)} pts`}</span>
+            </div>
+          </div>
+        `;
+      } else if (biz.cardType === 'cashback') {
+        topRightBadge = `<div class="px-2.5 py-1 rounded-xl text-xs font-extrabold shrink-0 shadow-sm" style="background-color:${biz.accentColor}; color:#fff;">${pctVal}% CASHBACK</div>`;
+        centerBlock = `
+          <div class="my-3.5 p-3.5 rounded-2xl bg-black/30 border border-white/15 space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[10px] uppercase tracking-wider opacity-70">Monedero disponible</div>
+                <div class="text-3xl font-extrabold leading-none mt-1">$${progress} <span class="text-xs font-semibold opacity-80">MXN</span></div>
+              </div>
+              <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-extrabold leading-tight border border-white/25" style="background-color:${biz.accentColor}44;">
+                <span class="text-sm">${pctVal}%</span>
+                <span class="text-[8px] uppercase opacity-85">back</span>
+              </div>
+            </div>
+            <div class="text-[10px] opacity-85 pt-1 border-t border-white/10">
+              Recibes <strong>${pctVal}% de regreso</strong> en monedero en cada compra. Meta sugerida: $${goal} MXN.
+            </div>
+          </div>
+        `;
+      } else {
+        // VIP / Cliente Frecuente / Descuento %
+        topRightBadge = `<div class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border border-white/30 bg-white/15 shrink-0">★ MIEMBRO VIP</div>`;
+        centerBlock = `
+          <div class="my-3.5 p-4 rounded-2xl border border-white/20 space-y-2" style="background: linear-gradient(120deg, rgba(255,255,255,0.14), rgba(0,0,0,0.32));">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[10px] uppercase tracking-widest opacity-75">Descuento Exclusivo</div>
+                <div class="text-3xl font-extrabold tracking-tight mt-0.5">${pctVal}% OFF</div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] opacity-75">Visitas VIP</div>
+                <div class="text-lg font-extrabold">${progress}/${goal}</div>
+              </div>
+            </div>
+            <div class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-black/25 inline-block">
+              🎁 ${escapeHtml(biz.reward)}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="rounded-3xl p-4 wallet-card-shadow transition-all" style="${bgStyle}">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              ${logoHtml}
+              <div class="min-w-0">
+                <div class="text-xs font-extrabold truncate">${escapeHtml(biz.name)}</div>
+                <div class="text-[10px] opacity-75 truncate">${escapeHtml(biz.cardTitle)}</div>
+              </div>
+            </div>
+            ${topRightBadge}
+          </div>
+          ${centerBlock}
+          <div class="grid grid-cols-2 gap-2 text-[10px] mb-3">
+            <div><div class="uppercase opacity-65">Titular</div><div class="font-bold truncate">${escapeHtml(holder)}</div></div>
+            <div class="text-right"><div class="uppercase opacity-65">Premio</div><div class="font-bold truncate">${escapeHtml(biz.reward)}</div></div>
+          </div>
+          <div class="bg-white rounded-2xl p-2.5 flex flex-col items-center justify-center text-slate-900">
+            <div class="w-24 h-24 flex items-center justify-center">${generateQrSvg(`${biz.id}|${code}`, 96)}</div>
+            <span class="text-[10px] font-mono font-bold tracking-widest text-slate-700 mt-1">${escapeHtml(code)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function applyRoleUI() {
+      const isAdmin = state.role === 'admin';
+      const biz = getActiveBusiness();
+      document.getElementById('adminBizControls').classList.toggle('hidden', !isAdmin);
+      document.getElementById('businessModeBanner').classList.toggle('hidden', isAdmin);
+      document.getElementById('bannerBizName').textContent = biz.name;
+      document.getElementById('roleBtnText').textContent = isAdmin ? 'Super Admin' : biz.name;
+      document.getElementById('roleSubtitle').textContent = isAdmin
+        ? 'Super Admin · Control total multi-negocio'
+        : `Panel de Negocio · ${biz.name}`;
+
+      document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
+      if (!isAdmin && (state.activeTab === 'designer' || state.activeTab === 'requests')) {
+        state.activeTab = 'terminal';
+      }
+      switchTab(state.activeTab);
+    }
+
+    function renderBusinessSelect() {
+      const opts = state.businesses.map(b => `<option value="${b.id}" ${b.id === state.activeBusinessId ? 'selected' : ''}>${escapeHtml(b.stampIcon)} ${escapeHtml(b.name)}</option>`).join('');
+      document.getElementById('businessSelect').innerHTML = opts;
+      document.getElementById('selLoginBiz').innerHTML = opts;
+    }
+
+    function renderCardTypeSelector() {
+      const biz = getActiveBusiness();
+      const grid = document.getElementById('cardTypeGrid');
+      grid.innerHTML = CARD_TYPES.map(ct => {
+        const active = biz.cardType === ct.id;
+        return `
+          <button type="button" data-card-type="${ct.id}" class="p-2.5 rounded-xl border text-left transition ${active ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+            <div class="flex items-center gap-1.5 text-xs font-bold ${active ? 'text-indigo-700' : 'text-slate-800'}">
+              <i data-lucide="${ct.icon}" class="w-3.5 h-3.5"></i> ${ct.label}
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5">${ct.desc}</div>
+          </button>
+        `;
+      }).join('');
+      grid.querySelectorAll('[data-card-type]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const b = getActiveBusiness();
+          b.cardType = btn.dataset.cardType;
+          if (b.cardType === 'points' && b.goal < 50) b.goal = 500;
+          if (b.cardType === 'stamps' && b.goal > 12) b.goal = 8;
+          if (b.cardType === 'cashback' && b.goal < 50) b.goal = 200;
+          persistBusiness(b);
+          renderAll();
+        });
+      });
+    }
+
+    function renderIconGallery() {
+      const biz = getActiveBusiness();
+      const grid = document.getElementById('iconGallery');
+      grid.innerHTML = ICON_GALLERY.map(ic => {
+        const active = !biz.stampImageUrl && biz.stampIcon === ic;
+        return `<button type="button" data-pick-icon="${ic}" class="h-8 rounded-lg border text-sm flex items-center justify-center transition ${active ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:bg-slate-100'}">${ic}</button>`;
+      }).join('');
+      grid.querySelectorAll('[data-pick-icon]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const b = getActiveBusiness();
+          b.stampIcon = btn.dataset.pickIcon;
+          b.stampImageUrl = '';
+          persistBusiness(b);
+          renderAll();
+        });
+      });
+    }
+
+    function syncDesignerInputs() {
+      const biz = getActiveBusiness();
+      renderCardTypeSelector();
+      renderIconGallery();
+
+      document.getElementById('inpBizName').value = biz.name;
+      document.getElementById('inpCardTitle').value = biz.cardTitle;
+      document.getElementById('inpReward').value = biz.reward;
+      document.getElementById('inpGoal').value = biz.goal;
+      document.getElementById('inpPercent').value = biz.percent || 10;
+      document.getElementById('inpBizPin').value = biz.pin || '';
+      document.getElementById('inpAddress').value = biz.address || '';
+      document.getElementById('inpTerms').value = biz.terms || '';
+      document.getElementById('inpBgColor').value = biz.bgColor;
+      document.getElementById('inpAccentColor').value = biz.accentColor;
+      document.getElementById('inpTextColor').value = biz.textColor;
+      document.getElementById('hexBg').textContent = biz.bgColor.toUpperCase();
+      document.getElementById('hexAccent').textContent = biz.accentColor.toUpperCase();
+      document.getElementById('hexText').textContent = biz.textColor.toUpperCase();
+      document.getElementById('inpGradient').checked = !!biz.gradient;
+      document.getElementById('btnClearLogo').classList.toggle('hidden', !biz.logoDataUrl);
+      document.getElementById('btnClearStampImg').classList.toggle('hidden', !biz.stampImageUrl);
+
+      const lblGoal = document.getElementById('lblGoal');
+      const pctWrap = document.getElementById('pctFieldWrap');
+      const lblPct = document.getElementById('lblPercent');
+      if (biz.cardType === 'stamps') {
+        lblGoal.textContent = 'Meta de sellos (2-12)';
+        pctWrap.classList.add('opacity-40');
+      } else if (biz.cardType === 'points') {
+        lblGoal.textContent = 'Meta de puntos';
+        pctWrap.classList.add('opacity-40');
+      } else if (biz.cardType === 'cashback') {
+        lblGoal.textContent = 'Meta monedero (MXN)';
+        lblPct.textContent = '% de Cashback';
+        pctWrap.classList.remove('opacity-40');
+      } else {
+        lblGoal.textContent = 'Visitas VIP';
+        lblPct.textContent = '% Descuento VIP';
+        pctWrap.classList.remove('opacity-40');
+      }
+
+      document.getElementById('simProgressVal').textContent = state.simProgress;
+      document.getElementById('btnFlipPreview').textContent = state.previewFlipped ? 'Ver frente ↺' : 'Ver reverso ↻';
+      document.getElementById('walletCardPreview').innerHTML = buildWalletCardHtml(biz, null, state.previewFlipped);
+    }
+
+    function renderTerminal() {
+      const biz = getActiveBusiness();
+      document.getElementById('termBizLabel').textContent = biz.name;
+      const customers = getBusinessCustomers();
+      const q = (document.getElementById('terminalSearch').value || '').trim().toLowerCase();
+      const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || (c.phone || '').toLowerCase().includes(q));
+
+      const quickList = document.getElementById('terminalQuickList');
+      quickList.innerHTML = filtered.length === 0
+        ? `<div class="col-span-full text-center py-8 text-xs text-slate-500">Aún no tienes clientes en ${escapeHtml(biz.name)}. Da clic en <strong>Alta cliente</strong> para registrar al primero.</div>`
+        : filtered.map(c => {
+          const ready = c.progress >= biz.goal;
+          const active = c.id === state.selectedCustomerId;
+          return `
+            <button type="button" data-select-cust="${c.id}" class="text-left p-3 rounded-xl border transition ${active ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-bold text-slate-900 truncate">${escapeHtml(c.name)}</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(c.code)}</span>
+              </div>
+              <div class="mt-1.5 flex items-center justify-between text-[11px]">
+                <span class="text-slate-500">${c.progress}/${biz.goal} ${getUnitLabel(biz.cardType)}</span>
+                ${ready ? '<span class="font-bold text-emerald-600">¡Premio listo!</span>' : `<span class="text-slate-400">${escapeHtml(c.lastVisit)}</span>`}
+              </div>
+            </button>
+          `;
+        }).join('');
+
+      quickList.querySelectorAll('[data-select-cust]').forEach(btn => {
+        btn.addEventListener('click', () => { state.selectedCustomerId = btn.dataset.selectCust; saveLocalState(); renderTerminal(); });
+      });
+
+      const panel = document.getElementById('terminalActivePanel');
+      let activeCust = customers.find(c => c.id === state.selectedCustomerId) || customers[0];
+      if (!activeCust) {
+        panel.innerHTML = `<div class="text-center py-10 text-xs text-slate-500 space-y-2"><p>Tu base de clientes empieza en cero.</p><p>Registra a tu primer cliente para entregarle su tarjeta por WhatsApp y empezar a sellar.</p></div>`;
+      } else {
+        state.selectedCustomerId = activeCust.id;
+        const canRedeem = activeCust.progress >= biz.goal;
+        const step = biz.cardType === 'points' ? 50 : (biz.cardType === 'cashback' ? 20 : 1);
+        panel.innerHTML = `
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">${escapeHtml(activeCust.name)}</h3>
+                <p class="text-xs text-slate-500">${escapeHtml(activeCust.code)} · ${escapeHtml(activeCust.phone)}</p>
+              </div>
+              <button type="button" id="btnTermOpenCard" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">Vista Android →</button>
+            </div>
+            ${buildWalletCardHtml(biz, activeCust, false)}
+            <div class="grid grid-cols-2 gap-2.5">
+              <button type="button" id="btnTermAddOne" class="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Sumar +${step}
+              </button>
+              <button type="button" id="btnTermRedeem" ${canRedeem ? '' : 'disabled'} class="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold ${canRedeem ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">
+                <i data-lucide="gift" class="w-4 h-4"></i> Canjear premio
+              </button>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <button type="button" id="btnTermPng" class="text-xs font-semibold text-slate-700 hover:text-indigo-600">Descargar PNG</button>
+              <button type="button" id="btnTermWa" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Enviar a WhatsApp →</button>
+            </div>
+          </div>
+        `;
+        document.getElementById('btnTermAddOne').addEventListener('click', () => addProgress(activeCust.id, step));
+        document.getElementById('btnTermRedeem').addEventListener('click', () => redeemReward(activeCust.id));
+        document.getElementById('btnTermOpenCard').addEventListener('click', () => openStandaloneCustomerView(activeCust.code));
+        document.getElementById('btnTermPng').addEventListener('click', () => downloadCardPng(biz, activeCust));
+        document.getElementById('btnTermWa').addEventListener('click', () => openWhatsAppShare(biz, activeCust));
+      }
+
+      const hist = state.transactions.filter(t => t.businessId === biz.id).slice(0, 8);
+      document.getElementById('terminalHistory').innerHTML = hist.length === 0
+        ? `<p class="text-xs text-slate-400">Sin movimientos registrados todavía.</p>`
+        : hist.map(t => `
+          <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full ${t.type === 'redeem' ? 'bg-emerald-500' : 'bg-indigo-500'}"></span>
+              <span class="font-semibold text-slate-800">${escapeHtml(t.customerName)}</span>
+              <span class="text-slate-500">${t.type === 'redeem' ? 'canjeó premio' : `+${t.amount} ${getUnitLabel(biz.cardType)}`}</span>
+            </div>
+            <span class="text-[11px] text-slate-400">${escapeHtml(t.date)}</span>
+          </div>
+        `).join('');
+    }
+
+    function addProgress(custId, amount) {
+      const biz = getActiveBusiness();
+      const cust = state.customers.find(c => c.id === custId);
+      if (!cust) return;
+      const prev = cust.progress;
+      cust.progress += amount;
+      cust.totalEarned += amount;
+      cust.lastVisit = 'Hace un momento';
+      const tx = { id: 'tx_' + Date.now(), businessId: biz.id, customerName: cust.name, type: 'earn', amount, date: 'Ahora' };
+      state.transactions.unshift(tx);
+      persistCustomer(cust);
+      persistTransaction(tx);
+      renderAll();
+      if (prev < biz.goal && cust.progress >= biz.goal) {
+        showToast(`🎉 ¡${cust.name} completó su tarjeta: ${biz.reward}!`);
+        if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+      } else {
+        showToast(`+${amount} ${getUnitLabel(biz.cardType)} agregados`);
+      }
+    }
+
+    function redeemReward(custId) {
+      const biz = getActiveBusiness();
+      const cust = state.customers.find(c => c.id === custId);
+      if (!cust || cust.progress < biz.goal) return;
+      cust.progress = Math.max(0, cust.progress - biz.goal);
+      cust.redemptions += 1;
+      cust.lastVisit = 'Canjeado ahora';
+      const tx = { id: 'tx_' + Date.now(), businessId: biz.id, customerName: cust.name, type: 'redeem', amount: biz.goal, date: 'Ahora' };
+      state.transactions.unshift(tx);
+      persistCustomer(cust);
+      persistTransaction(tx);
+      renderAll();
+      if (typeof confetti === 'function') confetti({ particleCount: 90, spread: 75, origin: { y: 0.65 } });
+      showToast(`🎁 Premio entregado a ${cust.name}`);
+    }
+
+    function renderCustomersTable() {
+      const biz = getActiveBusiness();
+      document.getElementById('crmBizLabel').textContent = biz.name;
+      const customers = getBusinessCustomers();
+      document.getElementById('navCustomerCount').textContent = customers.length;
+      const q = (document.getElementById('crmSearch').value || '').trim().toLowerCase();
+      const filtered = customers.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || (c.phone || '').toLowerCase().includes(q));
+
+      const tbody = document.getElementById('crmTableBody');
+      tbody.innerHTML = filtered.length === 0
+        ? `<tr><td colspan="5" class="py-10 text-center text-xs text-slate-500">Todavía no hay clientes registrados en ${escapeHtml(biz.name)}. Presiona <strong>Emitir tarjeta</strong> para crear el primero.</td></tr>`
+        : filtered.map(c => {
+          const ready = c.progress >= biz.goal;
+          return `
+            <tr class="hover:bg-slate-50/80">
+              <td class="py-3 pr-3"><div class="font-semibold text-slate-900 text-xs sm:text-sm">${escapeHtml(c.name)}</div><div class="text-[11px] text-slate-500">${escapeHtml(c.phone)}</div></td>
+              <td class="py-3 px-3"><span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md text-slate-700">${escapeHtml(c.code)}</span></td>
+              <td class="py-3 px-3"><span class="text-xs font-bold ${ready ? 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full' : 'text-slate-700'}">${c.progress}/${biz.goal} ${getUnitLabel(biz.cardType)} ${ready ? '✓' : ''}</span></td>
+              <td class="py-3 px-3 text-xs text-slate-600">${c.redemptions}</td>
+              <td class="py-3 pl-3 text-right">
+                <div class="inline-flex items-center gap-1.5">
+                  <button type="button" data-wa="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold">WhatsApp</button>
+                  <button type="button" data-png="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">PNG</button>
+                  <button type="button" data-pass="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold">Android</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      tbody.querySelectorAll('[data-pass]').forEach(b => b.addEventListener('click', () => openPassModal(b.dataset.pass)));
+      tbody.querySelectorAll('[data-png]').forEach(b => b.addEventListener('click', () => {
+        const c = state.customers.find(x => x.id === b.dataset.png);
+        if (c) downloadCardPng(biz, c);
+      }));
+      tbody.querySelectorAll('[data-wa]').forEach(b => b.addEventListener('click', () => {
+        const c = state.customers.find(x => x.id === b.dataset.wa);
+        if (c) openWhatsAppShare(biz, c);
+      }));
+    }
+
+    function renderAdminBusinessesAndRequests() {
+      document.getElementById('navReqBadge').textContent = state.requests.length;
+      const listEl = document.getElementById('adminBizList');
+      listEl.innerHTML = state.businesses.map(b => {
+        const count = state.customers.filter(c => c.businessId === b.id).length;
+        const red = state.customers.filter(c => c.businessId === b.id).reduce((s, c) => s + (c.redemptions || 0), 0);
+        return `
+          <div class="p-3.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0" style="background-color:${b.bgColor}; color:${b.textColor};">${escapeHtml(b.stampIcon)}</div>
+              <div class="min-w-0">
+                <div class="text-sm font-bold text-slate-900 truncate">${escapeHtml(b.name)}</div>
+                <div class="text-[11px] text-slate-500">${count} clientes · ${red} premios · Tipo: ${b.cardType} · PIN asignado: <strong class="font-mono text-slate-800">${escapeHtml(b.pin || '----')}</strong></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-edit-biz="${b.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">Editar</button>
+              <button type="button" data-impersonate="${b.id}" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-xs font-semibold text-indigo-700">Ver panel</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      listEl.querySelectorAll('[data-edit-biz]').forEach(btn => {
+        btn.addEventListener('click', () => { state.activeBusinessId = btn.dataset.editBiz; state.activeTab = 'designer'; saveLocalState(); renderAll(); switchTab('designer'); });
+      });
+      listEl.querySelectorAll('[data-impersonate]').forEach(btn => {
+        btn.addEventListener('click', () => { state.activeBusinessId = btn.dataset.impersonate; state.role = 'business'; state.activeTab = 'terminal'; saveLocalState(); renderAll(); applyRoleUI(); });
+      });
+
+      const reqEl = document.getElementById('pendingReqList');
+      reqEl.innerHTML = state.requests.length === 0
+        ? `<p class="text-xs text-slate-400 py-6 text-center">No hay solicitudes pendientes por ahora.</p>`
+        : state.requests.map(r => `
+          <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-900">${escapeHtml(r.businessName)}</span>
+              <span class="text-[10px] text-amber-700 font-semibold">Pendiente</span>
+            </div>
+            <p class="text-[11px] text-slate-600">Dueño: ${escapeHtml(r.owner)} · WA: ${escapeHtml(r.phone)}</p>
+            <p class="text-[11px] text-slate-700">Idea: <strong>${escapeHtml(r.goalDesc || 'Por definir')}</strong></p>
+            <div class="flex gap-2 pt-1">
+              <button type="button" data-approve-req="${r.id}" class="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Aprobar</button>
+              <button type="button" data-reject-req="${r.id}" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-600 text-xs font-semibold">Descartar</button>
+            </div>
+          </div>
+        `).join('');
+
+      reqEl.querySelectorAll('[data-approve-req]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const req = state.requests.find(x => x.id === btn.dataset.approveReq);
+          if (!req) return;
+          const pin = String(Math.floor(1000 + Math.random() * 9000));
+          const newBiz = {
+            id: 'biz_' + Date.now(), name: req.businessName, cardType: 'stamps',
+            cardTitle: `Club ${req.businessName}`, reward: req.goalDesc || '1 Premio Gratis',
+            goal: 8, percent: 10, pin, address: `WhatsApp: ${req.phone}`, bgColor: '#111827',
+            accentColor: '#6366F1', textColor: '#FFFFFF', stampIcon: '⭐', stampImageUrl: '',
+            logoDataUrl: '', gradient: true, terms: '1 sello por visita.'
+          };
+          state.businesses.push(newBiz);
+          state.requests = state.requests.filter(x => x.id !== req.id);
+          state.activeBusinessId = newBiz.id;
+          persistBusiness(newBiz);
+          renderAll();
+          showToast(`Negocio "${newBiz.name}" aprobado (PIN asignado: ${pin})`);
+        });
+      });
+      reqEl.querySelectorAll('[data-reject-req]').forEach(btn => {
+        btn.addEventListener('click', () => { state.requests = state.requests.filter(x => x.id !== btn.dataset.rejectReq); saveLocalState(); renderAll(); });
+      });
+    }
+
+    function renderAnalytics() {
+      const biz = getActiveBusiness();
+      const customers = getBusinessCustomers();
+      const totalEarned = customers.reduce((s, c) => s + (c.totalEarned || 0), 0);
+      const totalRedemptions = customers.reduce((s, c) => s + (c.redemptions || 0), 0);
+      const readyCount = customers.filter(c => c.progress >= biz.goal).length;
+
+      const kpis = [
+        { label: 'Clientes Activos', val: customers.length, sub: biz.name, color: 'text-indigo-600' },
+        { label: 'Sellos / Saldo Dado', val: totalEarned, sub: 'Acumulado total', color: 'text-amber-600' },
+        { label: 'Premios Entregados', val: totalRedemptions, sub: 'Canjes completados', color: 'text-emerald-600' },
+        { label: 'Listos para Canje', val: readyCount, sub: 'Meta alcanzada', color: 'text-violet-600' }
+      ];
+      document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <div class="text-xs font-semibold text-slate-500">${k.label}</div>
+          <div class="text-2xl font-extrabold mt-1 ${k.color}">${k.val}</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(k.sub)}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('cloudStatusText').textContent = sb
+        ? 'Conectado a tu base de datos Supabase en la nube. Todos los cambios y PINs se sincronizan en tiempo real.'
+        : 'En modo local. Cuando pegues tu SUPABASE_URL y SUPABASE_ANON_KEY en index.html y lo subas a GitHub, todo se sincronizará en la nube.';
+
+      const ctx = document.getElementById('activityChart');
+      if (activityChartInstance) activityChartInstance.destroy();
+      const labels = customers.map(c => c.name.split(' ')[0]);
+      activityChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels.length ? labels : ['Sin datos'],
+          datasets: [
+            { label: 'Progreso actual', data: customers.length ? customers.map(c => c.progress) : [0], backgroundColor: '#4f46e5', borderRadius: 8 },
+            { label: 'Premios canjeados', data: customers.length ? customers.map(c => c.redemptions) : [0], backgroundColor: '#10b981', borderRadius: 8 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    function downloadCardPng(biz, customerObj) {
+      const canvas = document.getElementById('exportCanvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const progress = customerObj ? customerObj.progress : state.simProgress;
+      const goal = Math.max(1, Number(biz.goal) || 5);
+      const holder = customerObj ? customerObj.name : 'Cliente VIP';
+      const code = customerObj ? customerObj.code : 'OBY-001';
+
+      if (biz.gradient) {
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, biz.bgColor);
+        grad.addColorStop(1, biz.accentColor);
+        ctx.fillStyle = grad;
+      } else {
+        ctx.fillStyle = biz.bgColor;
+      }
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.fillRect(48, 48, W - 96, H - 96);
+
+      ctx.fillStyle = biz.textColor;
+      ctx.font = 'bold 48px Inter, sans-serif';
+      ctx.fillText(biz.name, 90, 145);
+      ctx.font = '600 28px Inter, sans-serif';
+      ctx.globalAlpha = 0.85;
+      ctx.fillText(biz.cardTitle, 90, 195);
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = biz.accentColor;
+      ctx.fillRect(90, 235, W - 180, 12);
+
+      ctx.fillStyle = biz.textColor;
+      ctx.font = 'bold 34px Inter, sans-serif';
+      const subLine = biz.cardType === 'cashback'
+        ? `Cashback ${biz.percent || 10}% · Saldo: $${progress} MXN`
+        : (biz.cardType === 'coupon' ? `VIP ${biz.percent || 10}% OFF · Visitas: ${progress}/${goal}` : `Progreso: ${progress} / ${goal} ${getUnitLabel(biz.cardType)}`);
+      ctx.fillText(subLine, 90, 320);
+      ctx.font = '500 26px Inter, sans-serif';
+      ctx.fillText(`Premio: ${biz.reward}`, 90, 370);
+
+      if (biz.cardType === 'stamps') {
+        const count = Math.min(10, goal);
+        for (let i = 0; i < count; i++) {
+          const row = Math.floor(i / 5), col = i % 5;
+          const cx = 165 + col * 142, cy = 480 + row * 135;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+          ctx.fillStyle = i < progress ? biz.accentColor : 'rgba(255,255,255,0.14)';
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 38px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(i < progress ? biz.stampIcon : String(i + 1), cx, cy + 14);
+        }
+        ctx.textAlign = 'left';
+      }
+
+      ctx.fillStyle = biz.textColor;
+      ctx.font = '600 26px Inter, sans-serif';
+      ctx.fillText(`Titular: ${holder}`, 90, 760);
+      ctx.font = '500 22px Inter, sans-serif';
+      ctx.globalAlpha = 0.8;
+      ctx.fillText(biz.address || 'Cardcraft Rewards', 90, 800);
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(275, 855, 350, 360);
+      try {
+        if (typeof qrcode !== 'undefined') {
+          const qr = qrcode(0, 'M');
+          qr.addData(`${biz.id}|${code}`);
+          qr.make();
+          const modules = qr.getModuleCount();
+          const cell = Math.floor(280 / modules);
+          const offset = 275 + Math.floor((350 - cell * modules) / 2);
+          ctx.fillStyle = '#0F172A';
+          for (let r = 0; r < modules; r++) for (let c = 0; c < modules; c++) if (qr.isDark(r, c)) ctx.fillRect(offset + c * cell, 880 + r * cell, cell, cell);
+        }
+      } catch (e) {}
+
+      ctx.fillStyle = '#0F172A';
+      ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(code, 450, 1195);
+      ctx.textAlign = 'left';
+
+      const link = document.createElement('a');
+      link.download = `tarjeta-${code.toLowerCase()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast(`Tarjeta PNG descargada (${code})`);
+    }
+
+    function normalizeWhatsAppPhone(raw) {
+      const digits = String(raw || '').replace(/\D/g, '');
+      if (digits.length === 10) return '52' + digits;
+      return digits;
+    }
+
+    function openWhatsAppShare(biz, cust) {
+      const phone = normalizeWhatsAppPhone(cust.phone);
+      const baseUrl = window.location.href.split('#')[0];
+      const cardUrl = baseUrl.startsWith('http') ? `\n📲 Abre tu tarjeta Android aquí:\n${baseUrl}#/card/${cust.code}` : '';
+      const text = encodeURIComponent(
+        `¡Hola ${cust.name}! 🎉 Aquí tienes tu tarjeta digital de *${biz.name}*.\n` +
+        `🔖 Código: *${cust.code}*\n` +
+        `⭐ Avance actual: *${cust.progress}/${biz.goal} ${getUnitLabel(biz.cardType)}*\n` +
+        `🎁 Premio: *${biz.reward}*${cardUrl}`
+      );
+      window.open(`https://wa.me/${phone}?text=${text}`, '_blank', 'noopener');
+      showToast('Abriendo WhatsApp con la tarjeta del cliente');
+    }
+
+    function openPassModal(custId) {
+      const biz = getActiveBusiness();
+      const cust = state.customers.find(c => c.id === custId);
+      if (!cust) return;
+      modalPassCustomerId = custId;
+      document.getElementById('modalPassContainer').innerHTML = buildWalletCardHtml(biz, cust, false);
+      openModal('modalPass');
+    }
+
+    function openStandaloneCustomerView(code) {
+      const cust = state.customers.find(c => c.code.toLowerCase() === String(code).toLowerCase());
+      if (!cust) { showToast('Código de tarjeta no encontrado'); return; }
+      standaloneCust = cust;
+      standaloneFlipped = false;
+      renderStandaloneCard();
+      document.getElementById('mainAppShell').classList.add('hidden');
+      document.getElementById('customerCardView').classList.remove('hidden');
+      closeModal('modalPass');
+    }
+
+    function renderStandaloneCard() {
+      if (!standaloneCust) return;
+      const biz = state.businesses.find(b => b.id === standaloneCust.businessId) || getActiveBusiness();
+      document.getElementById('standaloneCardSlot').innerHTML = buildWalletCardHtml(biz, standaloneCust, standaloneFlipped);
+      document.getElementById('btnStandaloneFlip').textContent = standaloneFlipped ? 'Ver frente ↺' : 'Ver reverso ↻';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    async function handleAddAndroidWallet() {
+      if (GOOGLE_WALLET_ENDPOINT && standaloneCust) {
+        const biz = state.businesses.find(b => b.id === standaloneCust.businessId) || getActiveBusiness();
+        window.open(`${GOOGLE_WALLET_ENDPOINT}?biz=${encodeURIComponent(biz.id)}&code=${encodeURIComponent(standaloneCust.code)}`, '_blank', 'noopener');
+        return;
+      }
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        return;
+      }
+      showToast('En Android Chrome: toca el menú (⋮) → "Agregar a la pantalla principal" para guardar tu pase');
+    }
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      const target = document.getElementById('tab-' + tabName);
+      if (target) target.classList.remove('hidden');
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const active = btn.dataset.tab === tabName;
+        btn.classList.toggle('border-indigo-600', active);
+        btn.classList.toggle('text-indigo-700', active);
+        btn.classList.toggle('border-transparent', !active);
+        btn.classList.toggle('text-slate-500', !active);
+      });
+      if (tabName === 'analytics') renderAnalytics();
+    }
+
+    function renderAll() {
+      renderBusinessSelect();
+      syncDesignerInputs();
+      renderTerminal();
+      renderCustomersTable();
+      renderAdminBusinessesAndRequests();
+      if (state.activeTab === 'analytics') renderAnalytics();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function openModal(id) { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); }
+    function closeModal(id) { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+    function setRoleModalTab(which) {
+      const map = { admin: 'formLoginAdmin', biz: 'formLoginBiz', apply: 'formApplyBiz' };
+      const btns = { admin: 'roleTabAdmin', biz: 'roleTabBiz', apply: 'roleTabApply' };
+      Object.keys(map).forEach(k => {
+        document.getElementById(map[k]).classList.toggle('hidden', k !== which);
+        document.getElementById(btns[k]).className = `py-2 rounded-lg transition ${k === which ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'}`;
+      });
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('.nav-tab').forEach(btn => btn.addEventListener('click', () => { switchTab(btn.dataset.tab); saveLocalState(); }));
+      document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.closeModal)));
+
+      document.getElementById('businessSelect').addEventListener('change', e => {
+        state.activeBusinessId = e.target.value;
+        state.selectedCustomerId = null;
+        saveLocalState();
+        renderAll();
+      });
+
+      document.getElementById('btnOpenRoleModal').addEventListener('click', () => { setRoleModalTab('biz'); openModal('modalRole'); });
+      document.getElementById('btnBackToAdmin').addEventListener('click', () => { setRoleModalTab('admin'); openModal('modalRole'); });
+      document.getElementById('roleTabAdmin').addEventListener('click', () => setRoleModalTab('admin'));
+      document.getElementById('roleTabBiz').addEventListener('click', () => setRoleModalTab('biz'));
+      document.getElementById('roleTabApply').addEventListener('click', () => setRoleModalTab('apply'));
+
+      document.getElementById('formLoginAdmin').addEventListener('submit', e => {
+        e.preventDefault();
+        const pin = document.getElementById('inpAdminPin').value.trim();
+        if (pin !== state.adminPin) { showToast('PIN de administrador incorrecto'); return; }
+        state.role = 'admin';
+        document.getElementById('inpAdminPin').value = '';
+        saveLocalState();
+        closeModal('modalRole');
+        applyRoleUI();
+        renderAll();
+        showToast('Sesión iniciada como Super Admin');
+      });
+
+      document.getElementById('formLoginBiz').addEventListener('submit', e => {
+        e.preventDefault();
+        const bizId = document.getElementById('selLoginBiz').value;
+        const pin = document.getElementById('inpLoginBizPin').value.trim();
+        const biz = state.businesses.find(b => b.id === bizId);
+        if (!biz || pin !== (biz.pin || '')) { showToast('PIN incorrecto para este negocio'); return; }
+        state.role = 'business';
+        state.activeBusinessId = biz.id;
+        state.activeTab = 'terminal';
+        document.getElementById('inpLoginBizPin').value = '';
+        saveLocalState();
+        closeModal('modalRole');
+        applyRoleUI();
+        renderAll();
+        showToast(`Bienvenido al panel de ${biz.name}`);
+      });
+
+      document.getElementById('formApplyBiz').addEventListener('submit', e => {
+        e.preventDefault();
+        const req = {
+          id: 'req_' + Date.now(),
+          businessName: document.getElementById('reqBizName').value.trim(),
+          owner: document.getElementById('reqOwner').value.trim(),
+          phone: document.getElementById('reqPhone').value.trim(),
+          goalDesc: document.getElementById('reqGoalDesc').value.trim(),
+          date: 'Ahora'
+        };
+        state.requests.unshift(req);
+        saveLocalState();
+        if (sb) { sb.from('business_requests').insert({ id: req.id, business_name: req.businessName, owner: req.owner, phone: req.phone, goal_desc: req.goalDesc, date_label: req.date }).catch(() => {}); }
+        e.target.reset();
+        closeModal('modalRole');
+        renderAll();
+        showToast('Solicitud enviada al administrador');
+      });
+
+      document.getElementById('formChangeAdminPin').addEventListener('submit', e => {
+        e.preventDefault();
+        const np = document.getElementById('inpNewAdminPin').value.trim();
+        if (np.length < 4) { showToast('Usa al menos 4 caracteres'); return; }
+        persistAdminPin(np);
+        e.target.reset();
+        showToast('PIN de Super Admin actualizado correctamente');
+      });
+
+      document.getElementById('btnNewBusiness').addEventListener('click', () => openModal('modalBusiness'));
+      document.getElementById('btnAddBizFromList').addEventListener('click', () => openModal('modalBusiness'));
+      document.getElementById('btnDeleteBusiness').addEventListener('click', () => {
+        if (state.businesses.length <= 1) { showToast('Conserva al menos 1 negocio'); return; }
+        const id = state.activeBusinessId;
+        state.businesses = state.businesses.filter(b => b.id !== id);
+        state.customers = state.customers.filter(c => c.businessId !== id);
+        state.activeBusinessId = state.businesses[0].id;
+        saveLocalState();
+        renderAll();
+        showToast('Negocio eliminado');
+      });
+
+      [['inpBizName', 'name'], ['inpCardTitle', 'cardTitle'], ['inpReward', 'reward'], ['inpBizPin', 'pin'], ['inpAddress', 'address'], ['inpTerms', 'terms'], ['inpBgColor', 'bgColor'], ['inpAccentColor', 'accentColor'], ['inpTextColor', 'textColor']].forEach(([id, key]) => {
+        document.getElementById(id).addEventListener('input', e => {
+          const biz = getActiveBusiness();
+          biz[key] = e.target.value;
+          persistBusiness(biz);
+          renderAll();
+        });
+      });
+
+      document.getElementById('inpGoal').addEventListener('input', e => {
+        const biz = getActiveBusiness();
+        biz.goal = Math.max(1, Number(e.target.value) || 1);
+        persistBusiness(biz);
+        renderAll();
+      });
+
+      document.getElementById('inpPercent').addEventListener('input', e => {
+        const biz = getActiveBusiness();
+        biz.percent = Math.min(100, Math.max(1, Number(e.target.value) || 1));
+        persistBusiness(biz);
+        renderAll();
+      });
+
+      document.getElementById('inpCustomEmoji').addEventListener('input', e => {
+        const v = e.target.value.trim();
+        if (!v) return;
+        const biz = getActiveBusiness();
+        biz.stampIcon = v;
+        biz.stampImageUrl = '';
+        persistBusiness(biz);
+        renderAll();
+      });
+
+      document.getElementById('inpGradient').addEventListener('change', e => {
+        const biz = getActiveBusiness();
+        biz.gradient = e.target.checked;
+        persistBusiness(biz);
+        renderAll();
+      });
+
+      document.getElementById('inpLogoFile').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = ev => {
+          const biz = getActiveBusiness();
+          biz.logoDataUrl = ev.target.result;
+          persistBusiness(biz);
+          renderAll();
+          showToast('Logo actualizado');
+        };
+        r.readAsDataURL(file);
+      });
+      document.getElementById('btnClearLogo').addEventListener('click', () => { const b = getActiveBusiness(); b.logoDataUrl = ''; persistBusiness(b); renderAll(); });
+
+      document.getElementById('inpStampImgFile').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = ev => {
+          const biz = getActiveBusiness();
+          biz.stampImageUrl = ev.target.result;
+          persistBusiness(biz);
+          renderAll();
+          showToast('Imagen personalizada aplicada a los sellos');
+        };
+        r.readAsDataURL(file);
+      });
+      document.getElementById('btnClearStampImg').addEventListener('click', () => { const b = getActiveBusiness(); b.stampImageUrl = ''; persistBusiness(b); renderAll(); });
+
+      document.getElementById('btnFlipPreview').addEventListener('click', () => { state.previewFlipped = !state.previewFlipped; syncDesignerInputs(); });
+      document.getElementById('btnSimMinus').addEventListener('click', () => { state.simProgress = Math.max(0, state.simProgress - 1); syncDesignerInputs(); });
+      document.getElementById('btnSimPlus').addEventListener('click', () => {
+        const biz = getActiveBusiness();
+        const step = biz.cardType === 'points' ? 50 : (biz.cardType === 'cashback' ? 20 : 1);
+        state.simProgress = Math.min(biz.goal, state.simProgress + step);
+        syncDesignerInputs();
+      });
+
+      document.getElementById('btnQuickIssue').addEventListener('click', () => openModal('modalCustomer'));
+      document.getElementById('btnTerminalNewCustomer').addEventListener('click', () => openModal('modalCustomer'));
+      document.getElementById('btnOpenAddCustomer').addEventListener('click', () => openModal('modalCustomer'));
+      document.getElementById('btnDownloadSamplePng').addEventListener('click', () => downloadCardPng(getActiveBusiness(), null));
+      document.getElementById('terminalSearch').addEventListener('input', renderTerminal);
+      document.getElementById('crmSearch').addEventListener('input', renderCustomersTable);
+
+      document.getElementById('formCustomer').addEventListener('submit', e => {
+        e.preventDefault();
+        const biz = getActiveBusiness();
+        const prefix = biz.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'CCR';
+        const code = `${prefix}-${Math.floor(100 + Math.random() * 899)}`;
+        const initial = Math.max(0, Number(document.getElementById('custInitial').value) || 0);
+        const c = {
+          id: 'cust_' + Date.now(), businessId: biz.id, code,
+          name: document.getElementById('custName').value.trim(),
+          phone: document.getElementById('custPhone').value.trim(),
+          progress: initial, totalEarned: initial, redemptions: 0, lastVisit: 'Recién creado'
+        };
+        state.customers.unshift(c);
+        state.selectedCustomerId = c.id;
+        persistCustomer(c);
+        e.target.reset();
+        closeModal('modalCustomer');
+        renderAll();
+        openPassModal(c.id);
+        showToast(`Tarjeta ${code} creada`);
+      });
+
+      document.getElementById('formBusiness').addEventListener('submit', e => {
+        e.preventDefault();
+        const type = document.getElementById('newBizType').value;
+        const name = document.getElementById('newBizName').value.trim();
+        const pin = document.getElementById('newBizPin').value.trim() || '1234';
+        const newBiz = {
+          id: 'biz_' + Date.now(), name, pin, cardType: type,
+          cardTitle: type === 'cashback' ? `Monedero ${name}` : (type === 'coupon' ? `Pase VIP ${name}` : `Club ${name}`),
+          reward: type === 'cashback' ? 'Saldo acumulable en tienda' : '1 Premio Gratis',
+          goal: type === 'points' ? 500 : (type === 'cashback' ? 200 : 8),
+          percent: 10, address: 'Sucursal Principal', bgColor: '#111827', accentColor: '#6366F1',
+          textColor: '#FFFFFF', stampIcon: '⭐', stampImageUrl: '', logoDataUrl: '', gradient: true,
+          terms: 'Aplica en compras participantes.'
+        };
+        state.businesses.push(newBiz);
+        state.activeBusinessId = newBiz.id;
+        persistBusiness(newBiz);
+        e.target.reset();
+        closeModal('modalBusiness');
+        renderAll();
+        showToast(`Negocio "${name}" creado`);
+      });
+
+      document.getElementById('btnModalPassPng').addEventListener('click', () => { const c = state.customers.find(x => x.id === modalPassCustomerId); if (c) downloadCardPng(getActiveBusiness(), c); });
+      document.getElementById('btnModalPassWa').addEventListener('click', () => { const c = state.customers.find(x => x.id === modalPassCustomerId); if (c) openWhatsAppShare(getActiveBusiness(), c); });
+      document.getElementById('btnModalPassLink').addEventListener('click', () => { const c = state.customers.find(x => x.id === modalPassCustomerId); if (c) openStandaloneCustomerView(c.code); });
+
+      document.getElementById('btnExitCustomerView').addEventListener('click', () => {
+        document.getElementById('customerCardView').classList.add('hidden');
+        document.getElementById('mainAppShell').classList.remove('hidden');
+        if (window.location.hash.startsWith('#/card/')) history.replaceState(null, '', window.location.pathname);
+      });
+      document.getElementById('btnStandaloneFlip').addEventListener('click', () => { standaloneFlipped = !standaloneFlipped; renderStandaloneCard(); });
+      document.getElementById('btnStandalonePng').addEventListener('click', () => {
+        if (!standaloneCust) return;
+        const biz = state.businesses.find(b => b.id === standaloneCust.businessId) || getActiveBusiness();
+        downloadCardPng(biz, standaloneCust);
+      });
+      document.getElementById('btnAddAndroidWallet').addEventListener('click', handleAddAndroidWallet);
+
+      document.getElementById('btnExportCsv').addEventListener('click', () => {
+        const biz = getActiveBusiness();
+        const rows = [['Codigo', 'Nombre', 'WhatsApp', 'Progreso', 'Premios']];
+        getBusinessCustomers().forEach(c => rows.push([c.code, c.name, c.phone, c.progress, c.redemptions]));
+        const csv = rows.map(r => r.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        a.download = `clientes-${biz.name.toLowerCase().replace(/\s+/g, '-')}.csv`;
+        a.click();
+        showToast('CSV exportado');
+      });
+
+      document.getElementById('btnBackupJson').addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
+        a.download = 'cardcraft-rewards-respaldo.json';
+        a.click();
+        showToast('Respaldo JSON descargado');
+      });
+
+      document.getElementById('inpRestoreJson').addEventListener('change', e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = ev => {
+          try {
+            const p = JSON.parse(ev.target.result);
+            if (!Array.isArray(p.businesses)) throw new Error('inv');
+            state = Object.assign(createDefaultState(), p);
+            saveLocalState();
+            renderAll();
+            applyRoleUI();
+            showToast('Respaldo restaurado');
+          } catch (err) { showToast('Archivo JSON inválido'); }
+        };
+        r.readAsText(f);
+      });
+    }
+
+    function checkHashRoute() {
+      const h = window.location.hash || '';
+      if (h.startsWith('#/card/')) {
+        const code = decodeURIComponent(h.replace('#/card/', '').trim());
+        if (code) openStandaloneCustomerView(code);
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstallPrompt = e; });
+    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalState();
+      initSupabase();
+      bindEvents();
+      renderAll();
+      applyRoleUI();
+      checkHashRoute();
+      syncFromSupabase();
+    });
+  </script>
+</body>
+</html>
