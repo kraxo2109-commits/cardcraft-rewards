@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cardcraft Rewards — Plataforma Segura de Tarjetas Digitales</title>
-  <meta name="description" content="Cardcraft Rewards: plataforma segura de tarjetas de lealtad digitales para OBYNTZEK, Onírico by OBYNTZEK y negocios aliados." />
+  <title>Cardcraft Rewards v3 — Plataforma de Tarjetas Digitales</title>
+  <meta name="description" content="Cardcraft Rewards: tarjetas digitales de sellos, puntos proporcionales, cashback y club VIP con logros para negocios." />
   <meta name="theme-color" content="#09090b" />
   <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,16 +15,17 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
     .wallet-card-shadow {
-      box-shadow: 0 22px 45px -12px rgba(9, 9, 11, 0.44), 0 0 0 1px rgba(255,255,255,0.12) inset;
+      box-shadow: 0 24px 50px -12px rgba(9, 9, 11, 0.5), 0 0 0 1px rgba(255,255,255,0.14) inset;
     }
     .phone-frame {
-      box-shadow: 0 25px 60px -15px rgba(9, 9, 11, 0.48), 0 0 0 8px #09090b;
+      box-shadow: 0 25px 60px -15px rgba(9, 9, 11, 0.5), 0 0 0 8px #09090b;
     }
-    .stamp-pop { animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .stamp-pop { animation: popIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); }
     @keyframes popIn { 0% { transform: scale(0.75); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
     .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -33,12 +34,12 @@
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen antialiased">
 
-  <!-- ==================== 1. SECURE LOGIN GATE (DEFAULT WHEN LOGGED OUT) ==================== -->
+  <!-- ==================== 1. SECURE LOGIN GATE ==================== -->
   <div id="authGate" class="min-h-screen bg-gradient-to-br from-zinc-950 via-indigo-950 to-slate-950 flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-7 space-y-5">
       <div class="flex items-center gap-3">
         <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-zinc-900 via-indigo-900 to-violet-600 text-white flex items-center justify-center shadow-md shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M11 2l1.8 5.2L18 9l-5.2 1.8L11 16l-1.8-5.2L4 9l5.2-1.8L11 2zm7.5 11l.9 2.6L22 16.5l-2.6.9-.9 2.6-.9-2.6L15 16.5l2.6-.9.9-2.6zM5.5 16l.7 1.8L8 18.5l-1.8.7-.7 1.8-.7-1.8L3 18.5l1.8-.7.7-1.8z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11 2l1.8 5.2L18 9l-5.2 1.8L11 16l-1.8-5.2L4 9l5.2-1.8L11 2zm7.5 11l.9 2.6L22 16.5l-2.6.9-.9 2.6-.9-2.6L15 16.5l2.6-.9.9-2.6zM5.5 16l.7 1.8L8 18.5l-1.8.7-.7 1.8-.7-1.8L3 18.5l1.8-.7.7-1.8z"/></svg>
         </div>
         <div>
           <h1 class="text-lg font-extrabold tracking-tight text-slate-900">Cardcraft Rewards</h1>
@@ -51,7 +52,6 @@
         <button type="button" id="gateTabApply" class="py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">Registrar mi negocio</button>
       </div>
 
-      <!-- Real Supabase Auth Login Form -->
       <form id="formAuthLogin" class="space-y-3.5">
         <div>
           <label for="loginEmail" class="block text-xs font-semibold text-slate-700 mb-1">Correo electrónico</label>
@@ -70,7 +70,6 @@
         </p>
       </form>
 
-      <!-- Public Onboarding Request Form (Writes only to business_requests, reads nothing) -->
       <form id="formPublicApply" class="space-y-3 hidden">
         <p class="text-xs text-slate-500">¿Quieres tarjetas digitales para tu negocio? Envía tu solicitud y el administrador activará tu cuenta.</p>
         <div>
@@ -93,7 +92,7 @@
         </div>
         <div>
           <label for="reqGoalDesc" class="block text-xs font-semibold text-slate-700 mb-1">Premio o programa deseado</label>
-          <input id="reqGoalDesc" type="text" placeholder="Ej. 8 sellos = 1 premio gratis" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+          <input id="reqGoalDesc" type="text" placeholder="Ej. Sellos, Puntos, Cashback o VIP" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
         </div>
         <div id="applyStatusMsg" class="hidden text-xs font-semibold rounded-xl px-3 py-2"></div>
         <button id="btnApplySubmit" type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition">
@@ -136,14 +135,13 @@
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-slate-900 truncate">Cardcraft Rewards</h1>
-              <span class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Protegido</span>
+              <span class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">v3 Pro</span>
             </div>
             <p id="roleSubtitle" class="text-[11px] text-slate-500 truncate"></p>
           </div>
         </div>
 
         <div class="flex items-center gap-2 min-w-0">
-          <!-- Brand Switcher (Visible to Super Admin AND to any owner with >= 2 brands!) -->
           <div id="brandSwitcherWrap" class="flex items-center gap-2 min-w-0">
             <label for="businessSelect" class="sr-only">Marca activa</label>
             <select id="businessSelect" class="text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-800 rounded-lg px-2.5 py-2 border border-slate-200 max-w-[145px] sm:max-w-[220px] truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
@@ -189,11 +187,12 @@
       <section id="tab-designer" class="tab-panel">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div class="lg:col-span-7 space-y-5">
+            <!-- 1. Card Type Selector -->
             <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-3">
               <div class="flex items-center justify-between gap-2">
                 <div>
-                  <h2 class="text-sm font-bold text-slate-900">1. Tipo de tarjeta (cada uno tiene diseño propio)</h2>
-                  <p class="text-xs text-slate-500">Elige el formato para la marca seleccionada.</p>
+                  <h2 class="text-sm font-bold text-slate-900">1. Tipo de tarjeta (interfaz y lógica propia)</h2>
+                  <p class="text-xs text-slate-500">Cada modalidad adapta automáticamente los campos del diseñador, la tarjeta y la caja.</p>
                 </div>
                 <button id="btnDeleteBusiness" type="button" class="text-xs font-medium text-rose-600 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition">
                   Eliminar negocio
@@ -202,18 +201,19 @@
               <div id="cardTypeGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
             </div>
 
+            <!-- 2. Dynamic Program Settings -->
             <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-4">
               <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-600"></i> 2. Datos del Negocio y Correo del Dueño
+                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-600"></i> 2. Datos de la Marca y Reglas del Programa
               </h2>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label for="inpBizName" class="block text-xs font-semibold text-slate-700 mb-1">Nombre del negocio / marca</label>
+                  <label for="inpBizName" class="block text-xs font-semibold text-slate-700 mb-1">Nombre de la marca</label>
                   <input id="inpBizName" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
                 <div>
-                  <label for="inpOwnerEmail" class="block text-xs font-semibold text-slate-700 mb-1">Correo del dueño (puede repetirse en varias marcas)</label>
+                  <label for="inpOwnerEmail" class="block text-xs font-semibold text-slate-700 mb-1">Correo del dueño (admite varias marcas)</label>
                   <input id="inpOwnerEmail" type="email" placeholder="cliente@correo.com" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
               </div>
@@ -223,54 +223,121 @@
                   <label for="inpCardTitle" class="block text-xs font-semibold text-slate-700 mb-1">Título de la tarjeta</label>
                   <input id="inpCardTitle" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
-                <div>
-                  <label for="inpReward" class="block text-xs font-semibold text-slate-700 mb-1">Recompensa / Beneficio</label>
+                <div id="rewardFieldWrap">
+                  <label for="inpReward" class="block text-xs font-semibold text-slate-700 mb-1" id="lblReward">Recompensa</label>
                   <input id="inpReward" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div>
+              <!-- Dynamic Numeric Fields per Program Type -->
+              <div id="dynamicRulesRow" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div id="goalFieldWrap">
                   <label for="inpGoal" class="block text-xs font-semibold text-slate-700 mb-1" id="lblGoal">Meta de sellos</label>
-                  <input id="inpGoal" type="number" min="1" max="10000" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  <input id="inpGoal" type="number" min="1" max="100000" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
-                <div id="pctFieldWrap">
+                <div id="pctFieldWrap" class="hidden">
                   <label for="inpPercent" class="block text-xs font-semibold text-slate-700 mb-1" id="lblPercent">Porcentaje (%)</label>
                   <input id="inpPercent" type="number" min="1" max="100" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
-                <div class="col-span-2 sm:col-span-1">
-                  <label for="inpAddress" class="block text-xs font-semibold text-slate-700 mb-1">Sucursal / Redes</label>
-                  <input id="inpAddress" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+
+              <!-- Proportional Explanation Callout (for Points & Cashback) -->
+              <div id="ruleFormulaHint" class="hidden p-3 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-900"></div>
+
+              <!-- VIP Milestones Configurator (ONLY visible when cardType === 'coupon') -->
+              <div id="vipTiersEditor" class="hidden p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-800">Logros desbloqueables por número de visitas (VIP)</span>
+                  <span class="text-[11px] text-indigo-600 font-semibold">3 niveles editables</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div class="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1.5">
+                    <div class="text-[10px] font-bold uppercase text-indigo-600">Logro 1</div>
+                    <label class="block text-[11px] text-slate-600">Visitas requeridas</label>
+                    <input id="vipV1" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold" />
+                    <label class="block text-[11px] text-slate-600">Beneficio / %</label>
+                    <input id="vipR1" type="text" placeholder="Ej. 10% OFF" class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs" />
+                  </div>
+                  <div class="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1.5">
+                    <div class="text-[10px] font-bold uppercase text-violet-600">Logro 2</div>
+                    <label class="block text-[11px] text-slate-600">Visitas requeridas</label>
+                    <input id="vipV2" type="number" min="2" class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold" />
+                    <label class="block text-[11px] text-slate-600">Beneficio / %</label>
+                    <input id="vipR2" type="text" placeholder="Ej. 20% OFF" class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs" />
+                  </div>
+                  <div class="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1.5">
+                    <div class="text-[10px] font-bold uppercase text-amber-600">Logro 3 (Premio)</div>
+                    <label class="block text-[11px] text-slate-600">Visitas requeridas</label>
+                    <input id="vipV3" type="number" min="3" class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold" />
+                    <label class="block text-[11px] text-slate-600">Artículo / Regalo</label>
+                    <input id="vipR3" type="text" placeholder="Ej. Artículo Gratis" class="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Branch & Social Networks Checkboxes -->
+              <div class="space-y-3 pt-1">
+                <div>
+                  <label for="inpAddress" class="block text-xs font-semibold text-slate-700 mb-1">Sucursal / Dirección</label>
+                  <input id="inpAddress" type="text" placeholder="Ej. Av. Camarón Sábalo #412, Mazatlán" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                  <div class="text-xs font-bold text-slate-800">Redes sociales en la tarjeta (marca solo las que tiene el negocio)</div>
+                  <div id="socialsEditorGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
                 </div>
               </div>
 
               <div>
-                <label for="inpTerms" class="block text-xs font-semibold text-slate-700 mb-1">Términos y vigencia (reverso)</label>
+                <label for="inpTerms" class="block text-xs font-semibold text-slate-700 mb-1">Términos y vigencia (reverso de tarjeta)</label>
                 <input id="inpTerms" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
               </div>
             </div>
 
+            <!-- 3. Visual Identity: Background Image, Colors, Logo, Stamp Image & Icons -->
             <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-4">
               <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <i data-lucide="brush" class="w-4 h-4 text-indigo-600"></i> 3. Colores, Logo e Ícono de Sello / Check
+                <i data-lucide="image" class="w-4 h-4 text-indigo-600"></i> 3. Imagen de Fondo, Colores, Logo e Ícono
               </h2>
+
+              <!-- Background Image Uploader (XcaleCards upgrade!) -->
+              <div class="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-200 space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-indigo-950">Imagen de fondo de la tarjeta (opcional)</span>
+                  <button id="btnClearBgImg" type="button" class="text-[11px] text-rose-600 font-semibold hidden">Quitar fondo</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                  <label class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-indigo-300 bg-white hover:bg-indigo-50 text-xs font-semibold text-indigo-800 cursor-pointer transition">
+                    <i data-lucide="image-plus" class="w-4 h-4"></i> Subir foto / textura de fondo
+                    <input id="inpBgImgFile" type="file" accept="image/*" class="hidden" />
+                  </label>
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+                      <span>Oscurecimiento del fondo</span>
+                      <span id="bgOverlayVal">55%</span>
+                    </div>
+                    <input id="inpBgOverlay" type="range" min="15" max="85" value="55" class="w-full accent-indigo-600" />
+                  </div>
+                </div>
+              </div>
+
               <div class="grid grid-cols-3 gap-3">
                 <div>
-                  <label for="inpBgColor" class="block text-xs font-semibold text-slate-700 mb-1">Fondo</label>
+                  <label for="inpBgColor" class="block text-xs font-semibold text-slate-700 mb-1">Color fondo</label>
                   <div class="flex items-center gap-2 border border-slate-300 rounded-xl px-2 py-1.5">
                     <input id="inpBgColor" type="color" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
                     <span id="hexBg" class="text-[11px] font-mono text-slate-600"></span>
                   </div>
                 </div>
                 <div>
-                  <label for="inpAccentColor" class="block text-xs font-semibold text-slate-700 mb-1">Acento</label>
+                  <label for="inpAccentColor" class="block text-xs font-semibold text-slate-700 mb-1">Color acento</label>
                   <div class="flex items-center gap-2 border border-slate-300 rounded-xl px-2 py-1.5">
                     <input id="inpAccentColor" type="color" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
                     <span id="hexAccent" class="text-[11px] font-mono text-slate-600"></span>
                   </div>
                 </div>
                 <div>
-                  <label for="inpTextColor" class="block text-xs font-semibold text-slate-700 mb-1">Texto</label>
+                  <label for="inpTextColor" class="block text-xs font-semibold text-slate-700 mb-1">Color texto</label>
                   <div class="flex items-center gap-2 border border-slate-300 rounded-xl px-2 py-1.5">
                     <input id="inpTextColor" type="color" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
                     <span id="hexText" class="text-[11px] font-mono text-slate-600"></span>
@@ -278,7 +345,7 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-bold text-slate-800">Logo oficial de la marca</span>
@@ -312,12 +379,13 @@
 
               <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
                 <input id="inpGradient" type="checkbox" class="rounded text-indigo-600 w-4 h-4" />
-                Efecto degradado metálico
+                Efecto degradado metálico (cuando no hay foto de fondo)
               </label>
             </div>
           </div>
 
-          <div class="lg:col-span-5 lg:sticky lg:top-32 space-y-4">
+          <!-- Right Phone Preview -->
+          <div class="lg:col-span-5 lg:sticky lg:top-28 space-y-4">
             <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
               <div class="flex items-center justify-between gap-2 mb-4">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Vista previa Android</span>
@@ -326,7 +394,7 @@
                 </span>
               </div>
 
-              <div class="max-w-[330px] mx-auto bg-zinc-950 rounded-[2.2rem] p-3.5 phone-frame">
+              <div class="max-w-[335px] mx-auto bg-zinc-950 rounded-[2.2rem] p-3.5 phone-frame">
                 <div class="w-20 h-3.5 bg-black rounded-full mx-auto mb-3"></div>
                 <div id="walletCardPreview"></div>
                 <div class="mt-3 flex items-center justify-between px-2 text-[11px] text-slate-400">
@@ -337,10 +405,10 @@
 
               <div class="mt-5 pt-4 border-t border-slate-100 space-y-3">
                 <div class="flex items-center justify-between gap-2 text-xs">
-                  <span class="font-semibold text-slate-700">Simular avance:</span>
+                  <span class="font-semibold text-slate-700" id="simLabel">Simular avance:</span>
                   <div class="flex items-center gap-1.5">
                     <button id="btnSimMinus" type="button" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-slate-700">-</button>
-                    <span id="simProgressVal" class="w-10 text-center font-bold text-indigo-600">0</span>
+                    <span id="simProgressVal" class="w-12 text-center font-bold text-indigo-600">0</span>
                     <button id="btnSimPlus" type="button" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-slate-700">+</button>
                   </div>
                 </div>
@@ -358,15 +426,15 @@
         </div>
       </section>
 
-      <!-- ==================== TAB 2: TERMINAL / CAJA ==================== -->
+      <!-- ==================== TAB 2: TERMINAL / CAJA (DYNAMIC PER PROGRAM!) ==================== -->
       <section id="tab-terminal" class="tab-panel hidden">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div class="lg:col-span-7 space-y-5">
             <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 class="text-base font-bold text-slate-900">Caja / Sellar — <span id="termBizLabel"></span></h2>
-                  <p class="text-xs text-slate-500">Busca al cliente por código, nombre o WhatsApp para sumar sellos/puntos o canjear.</p>
+                  <h2 class="text-base font-bold text-slate-900">Caja / Operación — <span id="termBizLabel"></span></h2>
+                  <p class="text-xs text-slate-500">Busca al cliente para sellar, calcular puntos/cashback por compra o desbloquear logros VIP.</p>
                 </div>
                 <button id="btnTerminalNewCustomer" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
                   <i data-lucide="user-plus" class="w-4 h-4"></i> Alta cliente
@@ -419,8 +487,8 @@
                 <tr class="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500">
                   <th class="py-2.5 pr-3">Cliente</th>
                   <th class="py-2.5 px-3">Código</th>
-                  <th class="py-2.5 px-3">Progreso</th>
-                  <th class="py-2.5 px-3">Premios</th>
+                  <th class="py-2.5 px-3">Saldo / Avance</th>
+                  <th class="py-2.5 px-3">Canjes</th>
                   <th class="py-2.5 pl-3 text-right">Entregar / Ver</th>
                 </tr>
               </thead>
@@ -460,21 +528,17 @@
       <!-- ==================== TAB 5: ANALYTICS ==================== -->
       <section id="tab-analytics" class="tab-panel hidden space-y-5">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="kpiGrid"></div>
-
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
             <h3 class="text-sm font-bold text-slate-900 mb-3">Actividad de clientes</h3>
-            <div class="relative h-72">
-              <canvas id="activityChart"></canvas>
-            </div>
+            <div class="relative h-72"><canvas id="activityChart"></canvas></div>
           </div>
-
           <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
             <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
               <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Seguridad Activa
             </h3>
             <p class="text-xs text-slate-600 leading-relaxed">
-              Sesión iniciada como <strong id="sessionEmailLabel"></strong>. Tus datos están protegidos por políticas estrictas de servidor en Supabase.
+              Sesión iniciada como <strong id="sessionEmailLabel"></strong>. Datos protegidos con RLS estricto en Supabase.
             </p>
             <button id="btnBackupJson" type="button" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition">
               <i data-lucide="download" class="w-4 h-4"></i> Descargar respaldo (.json)
@@ -485,7 +549,7 @@
     </main>
   </div>
 
-  <!-- ==================== MODAL: ADD CUSTOMER ==================== -->
+  <!-- ==================== MODALS ==================== -->
   <div id="modalCustomer" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
       <div class="flex items-center justify-between">
@@ -504,7 +568,7 @@
           </div>
           <div>
             <label for="custInitial" class="block text-xs font-semibold text-slate-700 mb-1">Saldo / Sellos iniciales</label>
-            <input id="custInitial" type="number" min="0" value="1" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
+            <input id="custInitial" type="number" min="0" value="0" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-2">
@@ -515,7 +579,6 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL: NEW BUSINESS (ADMIN ONLY) ==================== -->
   <div id="modalBusiness" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
       <div class="flex items-center justify-between">
@@ -528,16 +591,16 @@
           <input id="newBizName" type="text" required placeholder="Nombre del comercio" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
         </div>
         <div>
-          <label for="newBizOwnerEmail" class="block text-xs font-semibold text-slate-700 mb-1">Correo del dueño * (puede repetirse si tiene varias marcas)</label>
+          <label for="newBizOwnerEmail" class="block text-xs font-semibold text-slate-700 mb-1">Correo del dueño *</label>
           <input id="newBizOwnerEmail" type="email" required placeholder="cliente@correo.com" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" />
         </div>
         <div>
-          <label for="newBizType" class="block text-xs font-semibold text-slate-700 mb-1">Tipo de tarjeta</label>
+          <label for="newBizType" class="block text-xs font-semibold text-slate-700 mb-1">Modalidad de tarjeta</label>
           <select id="newBizType" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm bg-white">
-            <option value="stamps">Sellos</option>
-            <option value="points">Puntos</option>
-            <option value="cashback">Cashback (%)</option>
-            <option value="coupon">VIP / Descuento (%)</option>
+            <option value="stamps">Sellos (cuadrícula)</option>
+            <option value="points">Puntos proporcionales (% por compra)</option>
+            <option value="cashback">Cashback (dinero electrónico %)</option>
+            <option value="coupon">VIP (logros por visitas)</option>
           </select>
         </div>
         <div class="flex justify-end gap-2 pt-2">
@@ -548,7 +611,6 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL: CUSTOMER PASS ==================== -->
   <div id="modalPass" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/65 backdrop-blur-xs p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-4">
       <div class="flex items-center justify-between">
@@ -571,14 +633,21 @@
     const SUPABASE_URL = 'https://qpirmydytfntefqqhyxw.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_lKmF7aqlZJ-tF3iHbiQjmQ_w97S04lh';
     const SUPER_ADMIN_EMAIL = 'j4910430@gmail.com';
-
     const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
     const CARD_TYPES = [
-      { id: 'stamps', label: 'Sellos', desc: 'Cuadrícula visual', icon: 'stamp' },
-      { id: 'points', label: 'Puntos', desc: 'Barra + puntaje', icon: 'coins' },
-      { id: 'cashback', label: 'Cashback %', desc: 'Monedero en %', icon: 'percent' },
-      { id: 'coupon', label: 'VIP / Frecuente', desc: 'Membresía élite', icon: 'crown' }
+      { id: 'stamps', label: 'Sellos', desc: 'Cuadrícula sin %', icon: 'stamp' },
+      { id: 'points', label: 'Puntos', desc: '% proporcional', icon: 'coins' },
+      { id: 'cashback', label: 'Cashback', desc: 'Dinero electrónico', icon: 'wallet' },
+      { id: 'coupon', label: 'Club VIP', desc: 'Logros por visitas', icon: 'crown' }
+    ];
+
+    const SOCIAL_DEFS = [
+      { key: 'whatsapp', label: 'WhatsApp', placeholder: '6691234567', svg: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.1c-.24.69-1.42 1.31-1.97 1.39-.51.07-1.15.1-1.85-.12-.43-.14-.98-.32-1.69-.63-2.97-1.28-4.91-4.27-5.06-4.47-.15-.2-1.21-1.61-1.21-3.07 0-1.46.77-2.18 1.04-2.48.27-.3.6-.37.8-.37h.58c.19 0 .44-.07.69.52.25.6.86 2.09.94 2.24.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.38-.45.51-.15.15-.3.31-.13.61.17.3.77 1.27 1.65 2.06 1.14 1.01 2.09 1.33 2.39 1.48.3.15.47.12.65-.07.17-.2.74-.87.94-1.17.2-.3.4-.25.67-.15.27.1 1.74.82 2.04.97.3.15.5.22.57.35.07.12.07.72-.17 1.41z"/></svg>' },
+      { key: 'instagram', label: 'Instagram', placeholder: '@tu_marca', svg: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6zm9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>' },
+      { key: 'facebook', label: 'Facebook', placeholder: 'fb.com/tumarca', svg: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z"/></svg>' },
+      { key: 'tiktok', label: 'TikTok', placeholder: '@tu_tiktok', svg: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>' },
+      { key: 'x', label: 'X (Twitter)', placeholder: '@tu_x', svg: '<svg viewBox="0 0 24 24" class="w-3.5 h-3.5 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>' }
     ];
 
     const ICON_GALLERY = [
@@ -589,31 +658,36 @@
       '🚗', '🎁', '🎟️', '🏆'
     ];
 
+    function defaultSocials() {
+      return {
+        whatsapp: { enabled: true, value: '' },
+        instagram: { enabled: true, value: '' },
+        facebook: { enabled: false, value: '' },
+        tiktok: { enabled: false, value: '' },
+        x: { enabled: false, value: '' }
+      };
+    }
+
+    function defaultVipTiers() {
+      return [
+        { visits: 5, reward: '10% de descuento' },
+        { visits: 10, reward: '20% de descuento' },
+        { visits: 15, reward: '1 Artículo Gratis VIP' }
+      ];
+    }
+
     let state = {
-      userEmail: '',
-      isAdmin: false,
-      activeBusinessId: null,
-      activeTab: 'designer',
-      previewFlipped: false,
-      simProgress: 3,
-      selectedCustomerId: null,
-      businesses: [],
-      customers: [],
-      transactions: [],
-      requests: []
+      userEmail: '', isAdmin: false, activeBusinessId: null, activeTab: 'designer',
+      previewFlipped: false, simProgress: 3, selectedCustomerId: null,
+      businesses: [], customers: [], transactions: [], requests: []
     };
 
-    let activityChartInstance = null;
-    let modalPassCustomerId = null;
-    let standaloneData = null;
-    let standaloneFlipped = false;
-    let deferredInstallPrompt = null;
+    let activityChartInstance = null, modalPassCustomerId = null, standaloneData = null, standaloneFlipped = false, deferredInstallPrompt = null;
 
     function showToast(msg) {
       const el = document.getElementById('toast');
       el.textContent = msg;
-      el.classList.remove('hidden');
-      el.classList.add('flex');
+      el.classList.remove('hidden'); el.classList.add('flex');
       clearTimeout(el._timer);
       el._timer = setTimeout(() => { el.classList.add('hidden'); el.classList.remove('flex'); }, 3200);
     }
@@ -622,14 +696,8 @@
       return String(str || '').replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
     }
 
-    function getActiveBusiness() {
-      return state.businesses.find(b => b.id === state.activeBusinessId) || state.businesses[0] || null;
-    }
-
-    function getBusinessCustomers(bizId = state.activeBusinessId) {
-      return state.customers.filter(c => c.businessId === bizId);
-    }
-
+    function getActiveBusiness() { return state.businesses.find(b => b.id === state.activeBusinessId) || state.businesses[0] || null; }
+    function getBusinessCustomers(bizId = state.activeBusinessId) { return state.customers.filter(c => c.businessId === bizId); }
     function getUnitLabel(cardType) {
       if (cardType === 'points') return 'pts';
       if (cardType === 'cashback') return 'MXN';
@@ -637,46 +705,62 @@
       return 'sellos';
     }
 
-    function generateQrSvg(text, size = 104) {
+    function generateQrSvg(text, size = 96) {
       try {
         if (typeof qrcode !== 'undefined') {
-          const qr = qrcode(0, 'M');
-          qr.addData(String(text));
-          qr.make();
+          const qr = qrcode(0, 'M'); qr.addData(String(text)); qr.make();
           return qr.createSvgTag({ cellSize: Math.max(2, Math.floor(size / 29)), margin: 2, scalable: true });
         }
       } catch (e) {}
       return `<div class="w-24 h-24 bg-slate-900 text-white text-[10px] font-mono flex items-center justify-center rounded-lg">${escapeHtml(text)}</div>`;
     }
 
+    function buildSocialIconsRow(socials) {
+      const s = socials || defaultSocials();
+      const active = SOCIAL_DEFS.filter(def => s[def.key] && s[def.key].enabled);
+      if (active.length === 0) return '';
+      return `<div class="flex items-center gap-1.5 flex-wrap">${active.map(def => `<span title="${def.label}: ${escapeHtml(s[def.key].value || '')}" class="w-6 h-6 rounded-full bg-white/15 border border-white/25 flex items-center justify-center text-white">${def.svg}</span>`).join('')}</div>`;
+    }
+
     function buildWalletCardHtml(biz, customerObj, flipped = false) {
       if (!biz) return '';
-      const progress = customerObj ? customerObj.progress : state.simProgress;
+      const progress = customerObj ? Number(customerObj.progress || 0) : state.simProgress;
       const goal = Math.max(1, Number(biz.goal) || 5);
       const pctVal = Math.max(1, Number(biz.percent) || 10);
       const pctBar = Math.min(100, Math.round((progress / goal) * 100));
       const code = customerObj ? customerObj.code : 'OBY-001';
       const holder = customerObj ? customerObj.name : 'Cliente';
-      const bgStyle = biz.gradient
-        ? `background: linear-gradient(135deg, ${biz.bgColor} 0%, ${biz.bgColor}ee 58%, ${biz.accentColor}55 100%); color: ${biz.textColor};`
-        : `background-color: ${biz.bgColor}; color: ${biz.textColor};`;
+      const overlayAlpha = Math.min(0.88, Math.max(0.15, (Number(biz.bgOverlay) || 55) / 100));
+
+      let cardBgStyle = '';
+      if (biz.bgImageUrl) {
+        cardBgStyle = `background-image: linear-gradient(rgba(9,9,11,${overlayAlpha}), rgba(9,9,11,${Math.min(0.92, overlayAlpha + 0.15)})), url('${biz.bgImageUrl}'); background-size: cover; background-position: center; color: ${biz.textColor};`;
+      } else if (biz.gradient) {
+        cardBgStyle = `background: linear-gradient(135deg, ${biz.bgColor} 0%, ${biz.bgColor}ee 58%, ${biz.accentColor}55 100%); color: ${biz.textColor};`;
+      } else {
+        cardBgStyle = `background-color: ${biz.bgColor}; color: ${biz.textColor};`;
+      }
+
+      const socials = biz.socials || defaultSocials();
+      const activeSocialLines = SOCIAL_DEFS.filter(d => socials[d.key] && socials[d.key].enabled)
+        .map(d => `<div class="flex items-center gap-1.5">${d.svg} <span><strong>${d.label}:</strong> ${escapeHtml(socials[d.key].value || 'Disponible')}</span></div>`).join('');
 
       if (flipped) {
         return `
-          <div class="rounded-3xl p-5 wallet-card-shadow transition-all min-h-[395px] flex flex-col justify-between" style="${bgStyle}">
+          <div class="rounded-3xl p-5 wallet-card-shadow transition-all min-h-[410px] flex flex-col justify-between" style="${cardBgStyle}">
             <div>
-              <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-3">
-                <span class="text-xs font-bold uppercase tracking-wider opacity-80">Reverso · Google Wallet</span>
-                <span class="text-[11px] font-mono opacity-80">${escapeHtml(code)}</span>
+              <div class="flex items-center justify-between border-b border-white/20 pb-3 mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider opacity-85">Reverso · Términos y Redes</span>
+                <span class="text-[11px] font-mono opacity-85">${escapeHtml(code)}</span>
               </div>
               <div class="space-y-2.5 text-xs">
-                <div><div class="opacity-65 text-[10px] uppercase">Negocio</div><div class="font-bold">${escapeHtml(biz.name)}</div></div>
-                <div><div class="opacity-65 text-[10px] uppercase">Beneficio</div><div class="font-semibold">${escapeHtml(biz.reward)}</div></div>
-                <div><div class="opacity-65 text-[10px] uppercase">Contacto / Sucursal</div><div>${escapeHtml(biz.address || 'Principal')}</div></div>
-                <div><div class="opacity-65 text-[10px] uppercase">Reglas</div><div class="opacity-90 leading-relaxed">${escapeHtml(biz.terms || '')}</div></div>
+                <div><div class="opacity-65 text-[10px] uppercase">Marca</div><div class="font-bold">${escapeHtml(biz.name)}</div></div>
+                <div><div class="opacity-65 text-[10px] uppercase">Sucursal</div><div>${escapeHtml(biz.address || 'Principal')}</div></div>
+                ${activeSocialLines ? `<div><div class="opacity-65 text-[10px] uppercase mb-1">Redes Oficiales</div><div class="space-y-1 text-[11px]">${activeSocialLines}</div></div>` : ''}
+                <div><div class="opacity-65 text-[10px] uppercase">Términos y vigencia</div><div class="opacity-90 leading-relaxed">${escapeHtml(biz.terms || 'Aplica en compras participantes.')}</div></div>
               </div>
             </div>
-            <div class="pt-3 border-t border-white/15 text-[10px] opacity-75 flex justify-between">
+            <div class="pt-3 border-t border-white/20 text-[10px] opacity-75 flex justify-between">
               <span>Cardcraft Rewards · Android</span>
               <span>${escapeHtml(code)}</span>
             </div>
@@ -685,78 +769,99 @@
       }
 
       const logoHtml = biz.logoDataUrl
-        ? `<img src="${biz.logoDataUrl}" alt="Logo" class="w-9 h-9 rounded-full object-cover bg-white/15 border border-white/25 shrink-0" />`
+        ? `<img src="${biz.logoDataUrl}" alt="Logo" class="w-9 h-9 rounded-full object-cover bg-white/15 border border-white/30 shrink-0" />`
         : `<div class="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0" style="background-color:${biz.accentColor};">${escapeHtml(biz.stampIcon)}</div>`;
 
-      let topRightBadge = `<div class="text-right shrink-0"><div class="text-[9px] uppercase opacity-70">${biz.cardType === 'stamps' ? 'Sellos' : 'Avance'}</div><div class="text-xs font-extrabold">${progress}/${goal}</div></div>`;
+      let topRightBadge = '';
       let centerBlock = '';
 
       if (biz.cardType === 'stamps') {
+        topRightBadge = `<div class="text-right shrink-0"><div class="text-[9px] uppercase opacity-75">Sellos</div><div class="text-sm font-extrabold">${progress}/${goal}</div></div>`;
         const displayGoal = Math.min(12, Math.max(2, goal));
         const cols = displayGoal <= 5 ? 'grid-cols-5' : (displayGoal <= 8 ? 'grid-cols-4' : 'grid-cols-5');
         let cells = '';
         for (let i = 0; i < displayGoal; i++) {
           const filled = i < progress;
-          let innerStamp = filled
+          const innerStamp = filled
             ? (biz.stampImageUrl ? `<img src="${biz.stampImageUrl}" alt="Sello" class="w-full h-full object-cover rounded-full" />` : escapeHtml(biz.stampIcon))
-            : `<span class="text-[10px] opacity-45">${i + 1}</span>`;
-          cells += `
-            <div class="aspect-square rounded-full flex items-center justify-center text-sm font-bold overflow-hidden transition ${filled ? 'stamp-pop shadow-sm ring-2 ring-white/40' : 'border border-dashed border-white/30 bg-white/5'}"
-                 style="${filled ? `background-color: ${biz.accentColor}; color: #ffffff;` : ''}">${innerStamp}</div>
-          `;
+            : `<span class="text-[10px] opacity-55">${i + 1}</span>`;
+          cells += `<div class="aspect-square rounded-full flex items-center justify-center text-sm font-bold overflow-hidden transition ${filled ? 'stamp-pop shadow-sm ring-2 ring-white/50' : 'border border-dashed border-white/35 bg-black/20'}" style="${filled ? `background-color: ${biz.accentColor}; color: #ffffff;` : ''}">${innerStamp}</div>`;
         }
-        centerBlock = `<div class="grid ${cols} gap-2 my-3.5 p-2.5 rounded-2xl bg-black/25 border border-white/10">${cells}</div>`;
+        centerBlock = `<div class="grid ${cols} gap-2 my-3.5 p-2.5 rounded-2xl bg-black/30 backdrop-blur-xs border border-white/15">${cells}</div>`;
       } else if (biz.cardType === 'points') {
-        topRightBadge = `<div class="px-2.5 py-1 rounded-full text-[10px] font-extrabold shrink-0" style="background-color:${biz.accentColor}; color:#fff;">PUNTOS</div>`;
+        const ptsPerPurchase = Math.round(goal * (pctVal / 100));
+        topRightBadge = `<div class="px-2.5 py-1 rounded-full text-[10px] font-extrabold shrink-0" style="background-color:${biz.accentColor}; color:#fff;">${pctVal}% EN PTS</div>`;
         centerBlock = `
-          <div class="my-3.5 p-3.5 rounded-2xl bg-black/30 border border-white/15 space-y-2.5">
+          <div class="my-3.5 p-3.5 rounded-2xl bg-black/35 backdrop-blur-xs border border-white/15 space-y-2">
             <div class="flex items-end justify-between">
-              <div><div class="text-[10px] uppercase opacity-70">Saldo acumulado</div><div class="text-3xl font-extrabold leading-none mt-0.5">${progress} <span class="text-xs font-semibold opacity-80">PTS</span></div></div>
-              <div class="text-right"><div class="text-[10px] opacity-70">Meta premio</div><div class="text-xs font-bold">${goal} PTS</div></div>
+              <div><div class="text-[10px] uppercase opacity-75">Tus Puntos</div><div class="text-3xl font-extrabold leading-none mt-0.5">${progress} <span class="text-xs font-semibold opacity-80">PTS</span></div></div>
+              <div class="text-right"><div class="text-[10px] opacity-75">Meta</div><div class="text-xs font-bold">${goal} PTS</div></div>
             </div>
-            <div class="w-full h-2.5 rounded-full bg-white/15 overflow-hidden"><div class="h-full rounded-full" style="width:${pctBar}%; background-color:${biz.accentColor};"></div></div>
+            <div class="w-full h-2.5 rounded-full bg-white/20 overflow-hidden"><div class="h-full rounded-full transition-all" style="width:${pctBar}%; background-color:${biz.accentColor};"></div></div>
+            <div class="text-[10px] opacity-90 flex justify-between">
+              <span>Cada compra suma ${pctVal}% en puntos</span>
+              <span>Ej: $${goal} → +${ptsPerPurchase} pts</span>
+            </div>
           </div>
         `;
       } else if (biz.cardType === 'cashback') {
-        topRightBadge = `<div class="px-2.5 py-1 rounded-xl text-xs font-extrabold shrink-0" style="background-color:${biz.accentColor}; color:#fff;">${pctVal}% CASHBACK</div>`;
+        topRightBadge = `<div class="px-2.5 py-1 rounded-xl text-xs font-extrabold shrink-0 shadow-sm" style="background-color:${biz.accentColor}; color:#fff;">${pctVal}% CASHBACK</div>`;
         centerBlock = `
-          <div class="my-3.5 p-3.5 rounded-2xl bg-black/30 border border-white/15 space-y-2">
+          <div class="my-3.5 p-3.5 rounded-2xl bg-black/35 backdrop-blur-xs border border-white/15 space-y-2">
             <div class="flex items-center justify-between">
-              <div><div class="text-[10px] uppercase opacity-70">Monedero disponible</div><div class="text-3xl font-extrabold leading-none mt-1">$${progress} <span class="text-xs font-semibold opacity-80">MXN</span></div></div>
-              <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-extrabold border border-white/25" style="background-color:${biz.accentColor}44;"><span class="text-sm">${pctVal}%</span><span class="text-[8px] uppercase">back</span></div>
+              <div>
+                <div class="text-[10px] uppercase tracking-wider opacity-75">Dinero electrónico disponible</div>
+                <div class="text-3xl font-extrabold leading-none mt-1">$${Number(progress).toFixed(2)} <span class="text-xs font-semibold opacity-80">MXN</span></div>
+              </div>
+              <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-extrabold border border-white/30" style="background-color:${biz.accentColor}55;">
+                <span class="text-sm">${pctVal}%</span>
+                <span class="text-[8px] uppercase">back</span>
+              </div>
             </div>
-            <div class="text-[10px] opacity-85 pt-1 border-t border-white/10">Recibes <strong>${pctVal}% de regreso</strong> en cada compra.</div>
+            <div class="text-[10px] opacity-90 pt-1.5 border-t border-white/15">
+              Recibes <strong>${pctVal}% de cada compra</strong> en saldo electrónico para usar en tu siguiente compra.
+            </div>
           </div>
         `;
       } else {
-        topRightBadge = `<div class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border border-white/30 bg-white/15 shrink-0">★ MIEMBRO VIP</div>`;
-        centerBlock = `
-          <div class="my-3.5 p-4 rounded-2xl border border-white/20 space-y-2" style="background: linear-gradient(120deg, rgba(255,255,255,0.14), rgba(0,0,0,0.32));">
-            <div class="flex items-center justify-between">
-              <div><div class="text-[10px] uppercase opacity-75">Descuento Exclusivo</div><div class="text-3xl font-extrabold mt-0.5">${pctVal}% OFF</div></div>
-              <div class="text-right"><div class="text-[10px] opacity-75">Visitas VIP</div><div class="text-lg font-extrabold">${progress}/${goal}</div></div>
+        const tiers = (Array.isArray(biz.vipTiers) && biz.vipTiers.length === 3) ? biz.vipTiers : defaultVipTiers();
+        topRightBadge = `<div class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border border-white/35 bg-white/15 shrink-0">★ CLUB VIP</div>`;
+        const tiersHtml = tiers.map((t, idx) => {
+          const unlocked = progress >= Number(t.visits);
+          return `
+            <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] border ${unlocked ? 'bg-emerald-500/25 border-emerald-300/60 text-white' : 'bg-black/25 border-white/15 text-white/75'}">
+              <span class="font-bold">${unlocked ? '🔓' : '🔒'} ${t.visits} visitas</span>
+              <span class="truncate max-w-[140px] font-semibold">${escapeHtml(t.reward)}</span>
             </div>
-            <div class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-black/25 inline-block">🎁 ${escapeHtml(biz.reward)}</div>
+          `;
+        }).join('');
+        centerBlock = `
+          <div class="my-3.5 p-3 rounded-2xl bg-black/35 backdrop-blur-xs border border-white/15 space-y-2">
+            <div class="flex items-center justify-between text-xs pb-1 border-b border-white/15">
+              <span class="opacity-80">Visitas acumuladas</span>
+              <span class="text-base font-extrabold">${progress} visitas</span>
+            </div>
+            <div class="space-y-1.5">${tiersHtml}</div>
           </div>
         `;
       }
 
       return `
-        <div class="rounded-3xl p-4 wallet-card-shadow transition-all" style="${bgStyle}">
+        <div class="rounded-3xl p-4 wallet-card-shadow transition-all" style="${cardBgStyle}">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
               ${logoHtml}
               <div class="min-w-0">
                 <div class="text-xs font-extrabold truncate">${escapeHtml(biz.name)}</div>
-                <div class="text-[10px] opacity-75 truncate">${escapeHtml(biz.cardTitle)}</div>
+                <div class="text-[10px] opacity-80 truncate">${escapeHtml(biz.cardTitle)}</div>
               </div>
             </div>
             ${topRightBadge}
           </div>
           ${centerBlock}
-          <div class="grid grid-cols-2 gap-2 text-[10px] mb-3">
-            <div><div class="uppercase opacity-65">Titular</div><div class="font-bold truncate">${escapeHtml(holder)}</div></div>
-            <div class="text-right"><div class="uppercase opacity-65">Premio</div><div class="font-bold truncate">${escapeHtml(biz.reward)}</div></div>
+          <div class="flex items-center justify-between gap-2 text-[10px] mb-2.5">
+            <div class="min-w-0"><div class="uppercase opacity-65">Titular</div><div class="font-bold truncate">${escapeHtml(holder)}</div></div>
+            ${buildSocialIconsRow(socials)}
           </div>
           <div class="bg-white rounded-2xl p-2.5 flex flex-col items-center justify-center text-slate-900">
             <div class="w-24 h-24 flex items-center justify-center">${generateQrSvg(`${biz.id}|${code}`, 96)}</div>
@@ -767,6 +872,7 @@
     }
 
     async function loadAuthorizedData() {
+      if (!sb) return;
       const [bRes, cRes, tRes, rRes] = await Promise.all([
         sb.from('businesses').select('*').order('created_at', { ascending: true }),
         sb.from('customers').select('*').order('created_at', { ascending: false }),
@@ -774,18 +880,25 @@
         state.isAdmin ? sb.from('business_requests').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] })
       ]);
 
-      state.businesses = (bRes.data || []).map(b => ({
-        id: b.id, name: b.name, ownerEmail: b.owner_email || '', cardType: b.card_type || 'stamps',
-        cardTitle: b.card_title || '', reward: b.reward || '', goal: b.goal || 5, percent: b.percent || 10,
-        address: b.address || '', bgColor: b.bg_color || '#09090B', accentColor: b.accent_color || '#A855F7',
-        textColor: b.text_color || '#FFFFFF', stampIcon: b.stamp_icon || '👕',
-        stampImageUrl: b.stamp_image_url || '', logoDataUrl: b.logo_data_url || '',
-        gradient: b.gradient !== false, terms: b.terms || ''
-      }));
+      state.businesses = (bRes.data || []).map(b => {
+        let socials = defaultSocials();
+        try { if (b.socials_json) socials = Object.assign(defaultSocials(), typeof b.socials_json === 'string' ? JSON.parse(b.socials_json) : b.socials_json); } catch (e) {}
+        let vipTiers = defaultVipTiers();
+        try { if (b.vip_tiers_json) vipTiers = typeof b.vip_tiers_json === 'string' ? JSON.parse(b.vip_tiers_json) : b.vip_tiers_json; } catch (e) {}
+        return {
+          id: b.id, name: b.name, ownerEmail: b.owner_email || '', cardType: b.card_type || 'stamps',
+          cardTitle: b.card_title || '', reward: b.reward || '', goal: b.goal || 5, percent: b.percent || 10,
+          address: b.address || '', bgColor: b.bg_color || '#09090B', accentColor: b.accent_color || '#A855F7',
+          textColor: b.text_color || '#FFFFFF', stampIcon: b.stamp_icon || '👕',
+          stampImageUrl: b.stamp_image_url || '', logoDataUrl: b.logo_data_url || '',
+          bgImageUrl: b.bg_image_url || '', bgOverlay: b.bg_overlay || 55,
+          socials, vipTiers, gradient: b.gradient !== false, terms: b.terms || ''
+        };
+      });
 
       state.customers = (cRes.data || []).map(c => ({
         id: c.id, businessId: c.business_id, code: c.code, name: c.name, phone: c.phone || '',
-        progress: c.progress || 0, totalEarned: c.total_earned || 0, redemptions: c.redemptions || 0, lastVisit: c.last_visit || ''
+        progress: Number(c.progress || 0), totalEarned: Number(c.total_earned || 0), redemptions: Number(c.redemptions || 0), lastVisit: c.last_visit || ''
       }));
 
       state.transactions = (tRes.data || []).map(t => ({
@@ -803,57 +916,55 @@
     }
 
     async function persistBusiness(biz) {
-      const { error } = await sb.from('businesses').upsert({
+      if (!sb) return;
+      const payload = {
         id: biz.id, name: biz.name, owner_email: (biz.ownerEmail || '').trim().toLowerCase(),
         card_type: biz.cardType, card_title: biz.cardTitle, reward: biz.reward,
         goal: biz.goal, percent: biz.percent || 10, address: biz.address,
         bg_color: biz.bgColor, accent_color: biz.accentColor, text_color: biz.textColor,
         stamp_icon: biz.stampIcon, stamp_image_url: biz.stampImageUrl || '',
-        logo_data_url: biz.logoDataUrl || '', gradient: biz.gradient, terms: biz.terms
-      });
-      if (error) showToast('Error al guardar negocio: ' + error.message);
+        logo_data_url: biz.logoDataUrl || '', bg_image_url: biz.bgImageUrl || '',
+        bg_overlay: Number(biz.bgOverlay) || 55,
+        socials_json: biz.socials || defaultSocials(),
+        vip_tiers_json: biz.vipTiers || defaultVipTiers(),
+        gradient: biz.gradient, terms: biz.terms
+      };
+      const { error } = await sb.from('businesses').upsert(payload);
+      if (error) showToast('Ejecuta supabase_v3_upgrade.sql en Supabase para guardar nuevos campos');
     }
 
     async function persistCustomer(c) {
-      const { error } = await sb.from('customers').upsert({
+      if (!sb) return;
+      await sb.from('customers').upsert({
         id: c.id, business_id: c.businessId, code: c.code, name: c.name, phone: c.phone,
-        progress: c.progress, total_earned: c.totalEarned, redemptions: c.redemptions, last_visit: c.lastVisit
+        progress: Math.round(c.progress), total_earned: Math.round(c.totalEarned), redemptions: c.redemptions, last_visit: c.lastVisit
       });
-      if (error) showToast('Error al guardar cliente: ' + error.message);
     }
 
     async function persistTransaction(t) {
+      if (!sb) return;
       await sb.from('transactions').insert({
-        id: t.id, business_id: t.businessId, customer_name: t.customerName, type: t.type, amount: t.amount, date_label: t.date
+        id: t.id, business_id: t.businessId, customer_name: t.customerName, type: t.type, amount: Math.round(t.amount), date_label: t.date
       });
     }
 
     function applySessionUI(session) {
       if (!session || !session.user) {
-        state.userEmail = '';
-        state.isAdmin = false;
+        state.userEmail = ''; state.isAdmin = false;
         document.getElementById('mainAppShell').classList.add('hidden');
-        if (!window.location.hash.startsWith('#/card/')) {
-          document.getElementById('authGate').classList.remove('hidden');
-        }
+        if (!window.location.hash.startsWith('#/card/')) document.getElementById('authGate').classList.remove('hidden');
         if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
       }
-
       state.userEmail = (session.user.email || '').toLowerCase();
       state.isAdmin = state.userEmail === SUPER_ADMIN_EMAIL.toLowerCase();
       document.getElementById('authGate').classList.add('hidden');
       document.getElementById('customerCardView').classList.add('hidden');
       document.getElementById('mainAppShell').classList.remove('hidden');
       document.getElementById('sessionEmailLabel').textContent = state.userEmail;
-      document.getElementById('roleSubtitle').textContent = state.isAdmin
-        ? `Super Admin · ${state.userEmail}`
-        : `Cuenta de Negocio · ${state.userEmail}`;
-
+      document.getElementById('roleSubtitle').textContent = state.isAdmin ? `Super Admin · ${state.userEmail}` : `Cuenta de Negocio · ${state.userEmail}`;
       document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !state.isAdmin));
-      if (!state.isAdmin && (state.activeTab === 'designer' || state.activeTab === 'requests')) {
-        state.activeTab = 'terminal';
-      }
+      if (!state.isAdmin && (state.activeTab === 'designer' || state.activeTab === 'requests')) state.activeTab = 'terminal';
       loadAuthorizedData();
     }
 
@@ -897,6 +1008,7 @@
       const biz = getActiveBusiness();
       if (!biz) return;
 
+      // 1. Card type selector
       const grid = document.getElementById('cardTypeGrid');
       grid.innerHTML = CARD_TYPES.map(ct => {
         const active = biz.cardType === ct.id;
@@ -908,20 +1020,79 @@
         if (biz.cardType === 'stamps' && biz.goal > 12) biz.goal = 8;
         persistBusiness(biz);
         renderAll();
+        if (typeof gsap !== 'undefined') gsap.fromTo('#walletCardPreview', { scale: 0.96, opacity: 0.6 }, { scale: 1, opacity: 1, duration: 0.35, ease: 'power2.out' });
       }));
 
+      // Dynamic visibility per program type!
+      const isStamps = biz.cardType === 'stamps';
+      const isPoints = biz.cardType === 'points';
+      const isCashback = biz.cardType === 'cashback';
+      const isVip = biz.cardType === 'coupon';
+
+      document.getElementById('goalFieldWrap').classList.toggle('hidden', isCashback || isVip);
+      document.getElementById('pctFieldWrap').classList.toggle('hidden', isStamps || isVip);
+      document.getElementById('vipTiersEditor').classList.toggle('hidden', !isVip);
+      document.getElementById('rewardFieldWrap').classList.toggle('hidden', isVip);
+
+      const hint = document.getElementById('ruleFormulaHint');
+      if (isPoints) {
+        const samplePts = Math.round((Number(biz.goal) || 500) * ((Number(biz.percent) || 10) / 100));
+        document.getElementById('lblGoal').textContent = 'Meta de puntos para canje';
+        document.getElementById('lblPercent').textContent = 'Porcentaje de puntos por compra (%)';
+        hint.classList.remove('hidden');
+        hint.innerHTML = `<strong>Fórmula proporcional activa:</strong> Con <strong>${biz.percent}%</strong>, si un cliente compra <strong>$${biz.goal} MXN</strong> acumula automáticamente <strong>+${samplePts} pts</strong> en caja.`;
+      } else if (isCashback) {
+        document.getElementById('lblPercent').textContent = 'Porcentaje de Cashback por compra (%)';
+        hint.classList.remove('hidden');
+        hint.innerHTML = `<strong>Monedero electrónico activo:</strong> Al registrar una compra de <strong>$500 MXN</strong> en caja, el cliente recibe automáticamente <strong>+$${(500 * (Number(biz.percent) || 10) / 100).toFixed(2)} MXN</strong> en dinero electrónico para usar en su próxima compra.`;
+      } else {
+        document.getElementById('lblGoal').textContent = 'Meta de sellos (2 a 12)';
+        hint.classList.add('hidden');
+      }
+
+      // VIP Tiers inputs
+      const tiers = (Array.isArray(biz.vipTiers) && biz.vipTiers.length === 3) ? biz.vipTiers : defaultVipTiers();
+      biz.vipTiers = tiers;
+      document.getElementById('vipV1').value = tiers[0].visits; document.getElementById('vipR1').value = tiers[0].reward;
+      document.getElementById('vipV2').value = tiers[1].visits; document.getElementById('vipR2').value = tiers[1].reward;
+      document.getElementById('vipV3').value = tiers[2].visits; document.getElementById('vipR3').value = tiers[2].reward;
+
+      // Socials Checkboxes Grid
+      const socials = biz.socials || defaultSocials();
+      biz.socials = socials;
+      const sg = document.getElementById('socialsEditorGrid');
+      sg.innerHTML = SOCIAL_DEFS.map(def => {
+        const item = socials[def.key] || { enabled: false, value: '' };
+        return `
+          <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
+            <input type="checkbox" data-soc-chk="${def.key}" ${item.enabled ? 'checked' : ''} class="w-4 h-4 rounded text-indigo-600 cursor-pointer shrink-0" />
+            <span class="text-slate-700 shrink-0">${def.svg}</span>
+            <input type="text" data-soc-val="${def.key}" value="${escapeHtml(item.value)}" placeholder="${def.label}: ${def.placeholder}" class="flex-1 min-w-0 text-xs outline-none bg-transparent" />
+          </div>
+        `;
+      }).join('');
+      sg.querySelectorAll('[data-soc-chk]').forEach(chk => chk.addEventListener('change', e => {
+        biz.socials[e.target.dataset.socChk].enabled = e.target.checked;
+        persistBusiness(biz);
+        document.getElementById('walletCardPreview').innerHTML = buildWalletCardHtml(biz, null, state.previewFlipped);
+      }));
+      sg.querySelectorAll('[data-soc-val]').forEach(inp => inp.addEventListener('input', e => {
+        biz.socials[e.target.dataset.socVal].value = e.target.value;
+        persistBusiness(biz);
+        document.getElementById('walletCardPreview').innerHTML = buildWalletCardHtml(biz, null, state.previewFlipped);
+      }));
+
+      // Icon Gallery
       const ig = document.getElementById('iconGallery');
       ig.innerHTML = ICON_GALLERY.map(ic => {
         const active = !biz.stampImageUrl && biz.stampIcon === ic;
         return `<button type="button" data-pick-icon="${ic}" class="h-8 rounded-lg border text-sm flex items-center justify-center transition ${active ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:bg-slate-100'}">${ic}</button>`;
       }).join('');
       ig.querySelectorAll('[data-pick-icon]').forEach(btn => btn.addEventListener('click', () => {
-        biz.stampIcon = btn.dataset.pickIcon;
-        biz.stampImageUrl = '';
-        persistBusiness(biz);
-        renderAll();
+        biz.stampIcon = btn.dataset.pickIcon; biz.stampImageUrl = ''; persistBusiness(biz); renderAll();
       }));
 
+      // Basic fields
       document.getElementById('inpBizName').value = biz.name;
       document.getElementById('inpOwnerEmail').value = biz.ownerEmail || '';
       document.getElementById('inpCardTitle').value = biz.cardTitle;
@@ -936,9 +1107,12 @@
       document.getElementById('hexBg').textContent = biz.bgColor.toUpperCase();
       document.getElementById('hexAccent').textContent = biz.accentColor.toUpperCase();
       document.getElementById('hexText').textContent = biz.textColor.toUpperCase();
+      document.getElementById('inpBgOverlay').value = biz.bgOverlay || 55;
+      document.getElementById('bgOverlayVal').textContent = (biz.bgOverlay || 55) + '%';
       document.getElementById('inpGradient').checked = !!biz.gradient;
       document.getElementById('btnClearLogo').classList.toggle('hidden', !biz.logoDataUrl);
       document.getElementById('btnClearStampImg').classList.toggle('hidden', !biz.stampImageUrl);
+      document.getElementById('btnClearBgImg').classList.toggle('hidden', !biz.bgImageUrl);
       document.getElementById('simProgressVal').textContent = state.simProgress;
       document.getElementById('btnFlipPreview').textContent = state.previewFlipped ? 'Ver frente ↺' : 'Ver reverso ↻';
       document.getElementById('walletCardPreview').innerHTML = buildWalletCardHtml(biz, null, state.previewFlipped);
@@ -954,22 +1128,77 @@
 
       const quickList = document.getElementById('terminalQuickList');
       quickList.innerHTML = filtered.length === 0
-        ? `<div class="col-span-full text-center py-8 text-xs text-slate-500">Sin clientes aún en ${escapeHtml(biz.name)}. Presiona <strong>Alta cliente</strong> para agregar el primero.</div>`
+        ? `<div class="col-span-full text-center py-8 text-xs text-slate-500">Sin clientes aún en ${escapeHtml(biz.name)}. Presiona <strong>Alta cliente</strong>.</div>`
         : filtered.map(c => {
-          const ready = c.progress >= biz.goal;
           const active = c.id === state.selectedCustomerId;
-          return `<button type="button" data-select-cust="${c.id}" class="text-left p-3 rounded-xl border transition ${active ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300 bg-white'}"><div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-slate-900 truncate">${escapeHtml(c.name)}</span><span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(c.code)}</span></div><div class="mt-1.5 flex items-center justify-between text-[11px]"><span class="text-slate-500">${c.progress}/${biz.goal} ${getUnitLabel(biz.cardType)}</span>${ready ? '<span class="font-bold text-emerald-600">¡Premio listo!</span>' : `<span class="text-slate-400">${escapeHtml(c.lastVisit)}</span>`}</div></button>`;
+          const badgeTxt = biz.cardType === 'cashback' ? `$${c.progress} MXN` : (biz.cardType === 'coupon' ? `${c.progress} visitas` : `${c.progress}/${biz.goal} ${getUnitLabel(biz.cardType)}`);
+          return `<button type="button" data-select-cust="${c.id}" class="text-left p-3 rounded-xl border transition ${active ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300 bg-white'}"><div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-slate-900 truncate">${escapeHtml(c.name)}</span><span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${escapeHtml(c.code)}</span></div><div class="mt-1.5 flex items-center justify-between text-[11px]"><span class="text-slate-600 font-semibold">${badgeTxt}</span><span class="text-slate-400">${escapeHtml(c.lastVisit)}</span></div></button>`;
         }).join('');
       quickList.querySelectorAll('[data-select-cust]').forEach(btn => btn.addEventListener('click', () => { state.selectedCustomerId = btn.dataset.selectCust; renderTerminal(); }));
 
       const panel = document.getElementById('terminalActivePanel');
       let activeCust = customers.find(c => c.id === state.selectedCustomerId) || customers[0];
       if (!activeCust) {
-        panel.innerHTML = `<div class="text-center py-10 text-xs text-slate-500">Registra a tu primer cliente para sellar y entregar tarjetas.</div>`;
+        panel.innerHTML = `<div class="text-center py-10 text-xs text-slate-500">Registra a tu primer cliente para operar en caja.</div>`;
       } else {
         state.selectedCustomerId = activeCust.id;
-        const canRedeem = activeCust.progress >= biz.goal;
-        const step = biz.cardType === 'points' ? 50 : (biz.cardType === 'cashback' ? 20 : 1);
+        let controlsHtml = '';
+
+        if (biz.cardType === 'stamps') {
+          const canRedeem = activeCust.progress >= biz.goal;
+          controlsHtml = `
+            <div class="grid grid-cols-2 gap-2.5">
+              <button type="button" id="btnTermAddOne" class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm">+1 Sello</button>
+              <button type="button" id="btnTermRedeem" ${canRedeem ? '' : 'disabled'} class="py-2.5 px-3 rounded-xl text-xs font-bold ${canRedeem ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">Canjear premio</button>
+            </div>
+          `;
+        } else if (biz.cardType === 'points') {
+          const canRedeem = activeCust.progress >= biz.goal;
+          controlsHtml = `
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <label class="block text-xs font-bold text-slate-700">Monto de compra ($ MXN) · Otorga ${biz.percent}% en puntos</label>
+              <div class="flex gap-2">
+                <input id="inpPurchaseAmt" type="number" min="1" value="500" class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold" />
+                <button type="button" id="btnTermCalcPoints" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Abonar pts</button>
+              </div>
+              <div id="liveCalcPreview" class="text-[11px] font-semibold text-indigo-700"></div>
+            </div>
+            <button type="button" id="btnTermRedeem" ${canRedeem ? '' : 'disabled'} class="w-full py-2.5 px-3 rounded-xl text-xs font-bold ${canRedeem ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">Canjear recompensa (${biz.goal} pts)</button>
+          `;
+        } else if (biz.cardType === 'cashback') {
+          controlsHtml = `
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">1. Registrar compra ($ MXN) · Devuelve ${biz.percent}%</label>
+                <div class="flex gap-2">
+                  <input id="inpCashbackPurchase" type="number" min="1" value="500" class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold" />
+                  <button type="button" id="btnTermAddCashback" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Abonar $</button>
+                </div>
+                <div id="liveCashbackPreview" class="text-[11px] font-semibold text-indigo-700 mt-1"></div>
+              </div>
+              <div class="pt-2 border-t border-slate-200">
+                <label class="block text-xs font-bold text-slate-700 mb-1">2. Usar dinero electrónico en compra ($ MXN)</label>
+                <div class="flex gap-2">
+                  <input id="inpCashbackSpend" type="number" min="1" max="${activeCust.progress}" value="${Math.min(50, activeCust.progress)}" class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold" />
+                  <button type="button" id="btnTermSpendCashback" ${activeCust.progress > 0 ? '' : 'disabled'} class="px-3.5 py-2 rounded-xl text-xs font-bold ${activeCust.progress > 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-200 text-slate-400'}">Descontar $</button>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          // VIP Milestones
+          const tiers = (Array.isArray(biz.vipTiers) && biz.vipTiers.length === 3) ? biz.vipTiers : defaultVipTiers();
+          const unlocked = tiers.filter(t => activeCust.progress >= Number(t.visits));
+          const maxVisits = Number(tiers[2].visits) || 15;
+          controlsHtml = `
+            <div class="grid grid-cols-2 gap-2.5">
+              <button type="button" id="btnTermAddVisit" class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm">+1 Visita VIP</button>
+              <button type="button" id="btnTermRedeemVip" ${unlocked.length > 0 ? '' : 'disabled'} class="py-2.5 px-3 rounded-xl text-xs font-bold ${unlocked.length > 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}">Entregar logro</button>
+            </div>
+            <div class="text-[11px] text-slate-600 text-center">${unlocked.length ? `Logro actual: <strong>${escapeHtml(unlocked[unlocked.length - 1].reward)}</strong>` : `Faltan ${Math.max(0, Number(tiers[0].visits) - activeCust.progress)} visitas para desbloquear el Logro 1`} (Ciclo completo: ${maxVisits} visitas)</div>
+          `;
+        }
+
         panel.innerHTML = `
           <div class="space-y-4">
             <div class="flex items-center justify-between">
@@ -977,67 +1206,92 @@
               <button type="button" id="btnTermOpenCard" class="text-xs font-semibold text-indigo-600">Vista Android →</button>
             </div>
             ${buildWalletCardHtml(biz, activeCust, false)}
-            <div class="grid grid-cols-2 gap-2.5">
-              <button type="button" id="btnTermAddOne" class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm">Sumar +${step}</button>
-              <button type="button" id="btnTermRedeem" ${canRedeem ? '' : 'disabled'} class="py-2.5 px-3 rounded-xl text-xs font-bold ${canRedeem ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}">Canjear premio</button>
-            </div>
+            ${controlsHtml}
             <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
               <button type="button" id="btnTermPng" class="text-xs font-semibold text-slate-700 hover:text-indigo-600">Descargar PNG</button>
               <button type="button" id="btnTermWa" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Enviar a WhatsApp →</button>
             </div>
           </div>
         `;
-        document.getElementById('btnTermAddOne').addEventListener('click', () => addProgress(activeCust.id, step));
-        document.getElementById('btnTermRedeem').addEventListener('click', () => redeemReward(activeCust.id));
+
         document.getElementById('btnTermOpenCard').addEventListener('click', () => openStandaloneFromLocal(biz, activeCust));
         document.getElementById('btnTermPng').addEventListener('click', () => downloadCardPng(biz, activeCust));
         document.getElementById('btnTermWa').addEventListener('click', () => openWhatsAppShare(biz, activeCust));
+
+        if (biz.cardType === 'stamps') {
+          document.getElementById('btnTermAddOne').addEventListener('click', () => addProgress(activeCust.id, 1));
+          document.getElementById('btnTermRedeem').addEventListener('click', () => redeemReward(activeCust.id, biz.goal));
+        } else if (biz.cardType === 'points') {
+          const inp = document.getElementById('inpPurchaseAmt');
+          const upd = () => {
+            const pts = Math.round((Number(inp.value) || 0) * ((Number(biz.percent) || 10) / 100));
+            document.getElementById('liveCalcPreview').textContent = `Compra $${inp.value || 0} × ${biz.percent}% = +${pts} puntos`;
+          };
+          upd(); inp.addEventListener('input', upd);
+          document.getElementById('btnTermCalcPoints').addEventListener('click', () => {
+            const pts = Math.max(1, Math.round((Number(inp.value) || 0) * ((Number(biz.percent) || 10) / 100)));
+            addProgress(activeCust.id, pts);
+          });
+          document.getElementById('btnTermRedeem').addEventListener('click', () => redeemReward(activeCust.id, biz.goal));
+        } else if (biz.cardType === 'cashback') {
+          const inp = document.getElementById('inpCashbackPurchase');
+          const upd = () => {
+            const amt = Math.round((Number(inp.value) || 0) * ((Number(biz.percent) || 10) / 100));
+            document.getElementById('liveCashbackPreview').textContent = `Compra $${inp.value || 0} × ${biz.percent}% = +$${amt} MXN en monedero`;
+          };
+          upd(); inp.addEventListener('input', upd);
+          document.getElementById('btnTermAddCashback').addEventListener('click', () => {
+            const amt = Math.max(1, Math.round((Number(inp.value) || 0) * ((Number(biz.percent) || 10) / 100)));
+            addProgress(activeCust.id, amt);
+          });
+          document.getElementById('btnTermSpendCashback').addEventListener('click', () => {
+            const spend = Math.min(activeCust.progress, Math.max(1, Number(document.getElementById('inpCashbackSpend').value) || 0));
+            if (spend > 0) redeemReward(activeCust.id, spend);
+          });
+        } else {
+          document.getElementById('btnTermAddVisit').addEventListener('click', () => addProgress(activeCust.id, 1));
+          document.getElementById('btnTermRedeemVip').addEventListener('click', () => {
+            const tiers = (Array.isArray(biz.vipTiers) && biz.vipTiers.length === 3) ? biz.vipTiers : defaultVipTiers();
+            const topVisits = Number(tiers[2].visits) || 15;
+            const deduct = activeCust.progress >= topVisits ? topVisits : 0;
+            redeemReward(activeCust.id, deduct);
+          });
+        }
       }
 
       const hist = state.transactions.filter(t => t.businessId === biz.id).slice(0, 8);
       document.getElementById('terminalHistory').innerHTML = hist.length === 0
         ? `<p class="text-xs text-slate-400">Sin movimientos registrados todavía.</p>`
-        : hist.map(t => `<div class="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-50 border border-slate-100 text-xs"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${t.type === 'redeem' ? 'bg-emerald-500' : 'bg-indigo-500'}"></span><span class="font-semibold text-slate-800">${escapeHtml(t.customerName)}</span><span class="text-slate-500">${t.type === 'redeem' ? 'canjeó premio' : `+${t.amount} ${getUnitLabel(biz.cardType)}`}</span></div><span class="text-[11px] text-slate-400">${escapeHtml(t.date)}</span></div>`).join('');
+        : hist.map(t => `<div class="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-50 border border-slate-100 text-xs"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${t.type === 'redeem' ? 'bg-emerald-500' : 'bg-indigo-500'}"></span><span class="font-semibold text-slate-800">${escapeHtml(t.customerName)}</span><span class="text-slate-500">${t.type === 'redeem' ? `canjeó (${t.amount} ${getUnitLabel(biz.cardType)})` : `+${t.amount} ${getUnitLabel(biz.cardType)}`}</span></div><span class="text-[11px] text-slate-400">${escapeHtml(t.date)}</span></div>`).join('');
     }
 
     async function addProgress(custId, amount) {
-      const biz = getActiveBusiness();
-      const cust = state.customers.find(c => c.id === custId);
+      const biz = getActiveBusiness(), cust = state.customers.find(c => c.id === custId);
       if (!biz || !cust) return;
-      const prev = cust.progress;
-      cust.progress += amount;
-      cust.totalEarned += amount;
-      cust.lastVisit = 'Hace un momento';
+      cust.progress += amount; cust.totalEarned += amount; cust.lastVisit = 'Hace un momento';
       const tx = { id: 'tx_' + Date.now(), businessId: biz.id, customerName: cust.name, type: 'earn', amount, date: 'Ahora' };
       state.transactions.unshift(tx);
       renderAll();
       await Promise.all([persistCustomer(cust), persistTransaction(tx)]);
-      if (prev < biz.goal && cust.progress >= biz.goal) {
-        showToast(`🎉 ¡${cust.name} completó su tarjeta: ${biz.reward}!`);
-        if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
-      } else {
-        showToast(`+${amount} ${getUnitLabel(biz.cardType)} agregados`);
-      }
+      if (typeof confetti === 'function' && (biz.cardType !== 'cashback' && cust.progress >= biz.goal)) confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+      showToast(`+${amount} ${getUnitLabel(biz.cardType)} agregados a ${cust.name}`);
     }
 
-    async function redeemReward(custId) {
-      const biz = getActiveBusiness();
-      const cust = state.customers.find(c => c.id === custId);
-      if (!biz || !cust || cust.progress < biz.goal) return;
-      cust.progress = Math.max(0, cust.progress - biz.goal);
-      cust.redemptions += 1;
-      cust.lastVisit = 'Canjeado ahora';
-      const tx = { id: 'tx_' + Date.now(), businessId: biz.id, customerName: cust.name, type: 'redeem', amount: biz.goal, date: 'Ahora' };
+    async function redeemReward(custId, deductAmount) {
+      const biz = getActiveBusiness(), cust = state.customers.find(c => c.id === custId);
+      if (!biz || !cust) return;
+      cust.progress = Math.max(0, cust.progress - deductAmount);
+      cust.redemptions += 1; cust.lastVisit = 'Canjeado ahora';
+      const tx = { id: 'tx_' + Date.now(), businessId: biz.id, customerName: cust.name, type: 'redeem', amount: deductAmount, date: 'Ahora' };
       state.transactions.unshift(tx);
       renderAll();
       await Promise.all([persistCustomer(cust), persistTransaction(tx)]);
       if (typeof confetti === 'function') confetti({ particleCount: 90, spread: 75, origin: { y: 0.65 } });
-      showToast(`🎁 Premio entregado a ${cust.name}`);
+      showToast(`🎁 Beneficio / Canje aplicado a ${cust.name}`);
     }
 
     function renderCustomersTable() {
-      const biz = getActiveBusiness();
-      if (!biz) return;
+      const biz = getActiveBusiness(); if (!biz) return;
       document.getElementById('crmBizLabel').textContent = biz.name;
       const customers = getBusinessCustomers();
       document.getElementById('navCustomerCount').textContent = customers.length;
@@ -1048,8 +1302,8 @@
       tbody.innerHTML = filtered.length === 0
         ? `<tr><td colspan="5" class="py-10 text-center text-xs text-slate-500">Todavía no hay clientes en ${escapeHtml(biz.name)}.</td></tr>`
         : filtered.map(c => {
-          const ready = c.progress >= biz.goal;
-          return `<tr class="hover:bg-slate-50/80"><td class="py-3 pr-3"><div class="font-semibold text-slate-900 text-xs sm:text-sm">${escapeHtml(c.name)}</div><div class="text-[11px] text-slate-500">${escapeHtml(c.phone)}</div></td><td class="py-3 px-3"><span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md text-slate-700">${escapeHtml(c.code)}</span></td><td class="py-3 px-3"><span class="text-xs font-bold ${ready ? 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full' : 'text-slate-700'}">${c.progress}/${biz.goal} ${getUnitLabel(biz.cardType)} ${ready ? '✓' : ''}</span></td><td class="py-3 px-3 text-xs text-slate-600">${c.redemptions}</td><td class="py-3 pl-3 text-right"><div class="inline-flex items-center gap-1.5"><button type="button" data-wa="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold">WhatsApp</button><button type="button" data-png="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">PNG</button><button type="button" data-pass="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold">Android</button></div></td></tr>`;
+          const valTxt = biz.cardType === 'cashback' ? `$${c.progress} MXN` : (biz.cardType === 'coupon' ? `${c.progress} visitas` : `${c.progress}/${biz.goal} ${getUnitLabel(biz.cardType)}`);
+          return `<tr class="hover:bg-slate-50/80"><td class="py-3 pr-3"><div class="font-semibold text-slate-900 text-xs sm:text-sm">${escapeHtml(c.name)}</div><div class="text-[11px] text-slate-500">${escapeHtml(c.phone)}</div></td><td class="py-3 px-3"><span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md text-slate-700">${escapeHtml(c.code)}</span></td><td class="py-3 px-3"><span class="text-xs font-bold text-slate-700">${valTxt}</span></td><td class="py-3 px-3 text-xs text-slate-600">${c.redemptions}</td><td class="py-3 pl-3 text-right"><div class="inline-flex items-center gap-1.5"><button type="button" data-wa="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold">WhatsApp</button><button type="button" data-png="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">PNG</button><button type="button" data-pass="${c.id}" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold">Android</button></div></td></tr>`;
         }).join('');
 
       tbody.querySelectorAll('[data-pass]').forEach(b => b.addEventListener('click', () => openPassModal(b.dataset.pass)));
@@ -1062,69 +1316,59 @@
       const listEl = document.getElementById('adminBizList');
       listEl.innerHTML = state.businesses.map(b => {
         const count = state.customers.filter(c => c.businessId === b.id).length;
-        const red = state.customers.filter(c => c.businessId === b.id).reduce((s, c) => s + (c.redemptions || 0), 0);
-        return `<div class="p-3.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0" style="background-color:${b.bgColor}; color:${b.textColor};">${escapeHtml(b.stampIcon)}</div><div class="min-w-0"><div class="text-sm font-bold text-slate-900 truncate">${escapeHtml(b.name)}</div><div class="text-[11px] text-slate-500">Dueño: <strong>${escapeHtml(b.ownerEmail || 'Sin asignar')}</strong> · ${count} clientes · ${red} premios</div></div></div><button type="button" data-edit-biz="${b.id}" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">Editar</button></div>`;
+        return `<div class="p-3.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0" style="background-color:${b.bgColor}; color:${b.textColor};">${escapeHtml(b.stampIcon)}</div><div class="min-w-0"><div class="text-sm font-bold text-slate-900 truncate">${escapeHtml(b.name)}</div><div class="text-[11px] text-slate-500">Dueño: <strong>${escapeHtml(b.ownerEmail || 'Sin asignar')}</strong> · ${count} clientes · ${b.cardType}</div></div></div><button type="button" data-edit-biz="${b.id}" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">Editar</button></div>`;
       }).join('');
       listEl.querySelectorAll('[data-edit-biz]').forEach(btn => btn.addEventListener('click', () => { state.activeBusinessId = btn.dataset.editBiz; state.activeTab = 'designer'; renderAll(); }));
 
       const reqEl = document.getElementById('pendingReqList');
       reqEl.innerHTML = state.requests.length === 0
         ? `<p class="text-xs text-slate-400 py-6 text-center">No hay solicitudes pendientes por ahora.</p>`
-        : state.requests.map(r => `<div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1.5"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-900">${escapeHtml(r.businessName)}</span><span class="text-[10px] text-amber-700 font-semibold">Pendiente</span></div><p class="text-[11px] text-slate-600">Dueño: ${escapeHtml(r.owner)} · WA: ${escapeHtml(r.phone)}</p><p class="text-[11px] text-slate-700">Correo: <strong>${escapeHtml(r.email || 'Sin correo')}</strong></p><p class="text-[11px] text-slate-700">Premio: ${escapeHtml(r.goalDesc || 'Por definir')}</p><div class="flex gap-2 pt-1.5"><button type="button" data-approve-req="${r.id}" class="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Aprobar y crear</button><button type="button" data-reject-req="${r.id}" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-600 text-xs font-semibold">Descartar</button></div></div>`).join('');
+        : state.requests.map(r => `<div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1.5"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-900">${escapeHtml(r.businessName)}</span><span class="text-[10px] text-amber-700 font-semibold">Pendiente</span></div><p class="text-[11px] text-slate-600">Dueño: ${escapeHtml(r.owner)} · WA: ${escapeHtml(r.phone)}</p><p class="text-[11px] text-slate-700">Correo: <strong>${escapeHtml(r.email || 'Sin correo')}</strong></p><p class="text-[11px] text-slate-700">Programa: ${escapeHtml(r.goalDesc || 'Por definir')}</p><div class="flex gap-2 pt-1.5"><button type="button" data-approve-req="${r.id}" class="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Aprobar y crear</button><button type="button" data-reject-req="${r.id}" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-600 text-xs font-semibold">Descartar</button></div></div>`).join('');
 
       reqEl.querySelectorAll('[data-approve-req]').forEach(btn => btn.addEventListener('click', async () => {
-        const req = state.requests.find(x => x.id === btn.dataset.approveReq);
-        if (!req) return;
+        const req = state.requests.find(x => x.id === btn.dataset.approveReq); if (!req) return;
         const newBiz = {
           id: 'biz_' + Date.now(), name: req.businessName, ownerEmail: (req.email || '').toLowerCase(),
           cardType: 'stamps', cardTitle: `Club ${req.businessName}`, reward: req.goalDesc || '1 Premio Gratis',
-          goal: 8, percent: 10, address: `WhatsApp: ${req.phone}`, bgColor: '#111827',
-          accentColor: '#6366F1', textColor: '#FFFFFF', stampIcon: '⭐', stampImageUrl: '',
-          logoDataUrl: '', gradient: true, terms: '1 sello por visita.'
+          goal: 8, percent: 10, address: '', bgColor: '#111827', accentColor: '#6366F1', textColor: '#FFFFFF',
+          stampIcon: '⭐', stampImageUrl: '', logoDataUrl: '', bgImageUrl: '', bgOverlay: 55,
+          socials: defaultSocials(), vipTiers: defaultVipTiers(), gradient: true, terms: '1 sello por visita.'
         };
-        state.businesses.push(newBiz);
-        state.requests = state.requests.filter(x => x.id !== req.id);
-        state.activeBusinessId = newBiz.id;
+        state.businesses.push(newBiz); state.requests = state.requests.filter(x => x.id !== req.id); state.activeBusinessId = newBiz.id;
         await persistBusiness(newBiz);
-        await sb.from('business_requests').delete().eq('id', req.id);
-        renderAll();
-        showToast(`Negocio "${newBiz.name}" creado. Recuerda crear su contraseña en Supabase Auth para ${req.email}.`);
+        if (sb) await sb.from('business_requests').delete().eq('id', req.id);
+        renderAll(); showToast(`Negocio "${newBiz.name}" creado`);
       }));
 
       reqEl.querySelectorAll('[data-reject-req]').forEach(btn => btn.addEventListener('click', async () => {
         const rid = btn.dataset.rejectReq;
         state.requests = state.requests.filter(x => x.id !== rid);
-        await sb.from('business_requests').delete().eq('id', rid);
-        renderAll();
-        showToast('Solicitud descartada');
+        if (sb) await sb.from('business_requests').delete().eq('id', rid);
+        renderAll(); showToast('Solicitud descartada');
       }));
     }
 
     function renderAnalytics() {
-      const biz = getActiveBusiness();
-      if (!biz) return;
+      const biz = getActiveBusiness(); if (!biz) return;
       const customers = getBusinessCustomers();
       const totalEarned = customers.reduce((s, c) => s + (c.totalEarned || 0), 0);
       const totalRedemptions = customers.reduce((s, c) => s + (c.redemptions || 0), 0);
-      const readyCount = customers.filter(c => c.progress >= biz.goal).length;
-
       document.getElementById('kpiGrid').innerHTML = [
         { label: 'Clientes Activos', val: customers.length, sub: biz.name, color: 'text-indigo-600' },
-        { label: 'Sellos / Saldo Dado', val: totalEarned, sub: 'Acumulado total', color: 'text-amber-600' },
-        { label: 'Premios Entregados', val: totalRedemptions, sub: 'Canjes completados', color: 'text-emerald-600' },
-        { label: 'Listos para Canje', val: readyCount, sub: 'Meta alcanzada', color: 'text-violet-600' }
+        { label: `Total ${getUnitLabel(biz.cardType)}`, val: totalEarned, sub: 'Acumulado histórico', color: 'text-amber-600' },
+        { label: 'Canjes / Logros', val: totalRedemptions, sub: 'Entregados', color: 'text-emerald-600' },
+        { label: 'Modalidad', val: biz.cardType.toUpperCase(), sub: 'Diseño activo', color: 'text-violet-600' }
       ].map(k => `<div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"><div class="text-xs font-semibold text-slate-500">${k.label}</div><div class="text-2xl font-extrabold mt-1 ${k.color}">${k.val}</div><div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(k.sub)}</div></div>`).join('');
 
       const ctx = document.getElementById('activityChart');
       if (activityChartInstance) activityChartInstance.destroy();
-      const labels = customers.map(c => c.name.split(' ')[0]);
       activityChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels.length ? labels : ['Sin datos'],
+          labels: customers.length ? customers.map(c => c.name.split(' ')[0]) : ['Sin datos'],
           datasets: [
-            { label: 'Progreso actual', data: customers.length ? customers.map(c => c.progress) : [0], backgroundColor: '#4f46e5', borderRadius: 8 },
-            { label: 'Premios canjeados', data: customers.length ? customers.map(c => c.redemptions) : [0], backgroundColor: '#10b981', borderRadius: 8 }
+            { label: 'Saldo / Avance', data: customers.length ? customers.map(c => c.progress) : [0], backgroundColor: '#4f46e5', borderRadius: 8 },
+            { label: 'Canjes', data: customers.length ? customers.map(c => c.redemptions) : [0], backgroundColor: '#10b981', borderRadius: 8 }
           ]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
@@ -1132,45 +1376,45 @@
     }
 
     function downloadCardPng(biz, customerObj) {
-      const canvas = document.getElementById('exportCanvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.getElementById('exportCanvas'), ctx = canvas.getContext('2d');
       const W = canvas.width, H = canvas.height;
       const progress = customerObj ? customerObj.progress : state.simProgress;
       const goal = Math.max(1, Number(biz.goal) || 5);
       const holder = customerObj ? customerObj.name : 'Cliente VIP';
       const code = customerObj ? customerObj.code : 'OBY-001';
 
-      if (biz.gradient) {
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, biz.bgColor); grad.addColorStop(1, biz.accentColor);
-        ctx.fillStyle = grad;
-      } else { ctx.fillStyle = biz.bgColor; }
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(48, 48, W - 96, H - 96);
-      ctx.fillStyle = biz.textColor; ctx.font = 'bold 48px Inter, sans-serif'; ctx.fillText(biz.name, 90, 145);
-      ctx.font = '600 28px Inter, sans-serif'; ctx.globalAlpha = 0.85; ctx.fillText(biz.cardTitle, 90, 195); ctx.globalAlpha = 1;
-      ctx.fillStyle = biz.accentColor; ctx.fillRect(90, 235, W - 180, 12);
-      ctx.fillStyle = biz.textColor; ctx.font = 'bold 34px Inter, sans-serif';
-      ctx.fillText(`Progreso: ${progress} / ${goal} ${getUnitLabel(biz.cardType)}`, 90, 320);
-      ctx.font = '500 26px Inter, sans-serif'; ctx.fillText(`Premio: ${biz.reward}`, 90, 370);
-      ctx.fillText(`Titular: ${holder}`, 90, 760);
+      const finishDraw = () => {
+        ctx.fillStyle = 'rgba(9,9,11,0.52)'; ctx.fillRect(48, 48, W - 96, H - 96);
+        ctx.fillStyle = biz.textColor; ctx.font = 'bold 48px Inter, sans-serif'; ctx.fillText(biz.name, 90, 145);
+        ctx.font = '600 28px Inter, sans-serif'; ctx.globalAlpha = 0.85; ctx.fillText(biz.cardTitle, 90, 195); ctx.globalAlpha = 1;
+        ctx.fillStyle = biz.accentColor; ctx.fillRect(90, 235, W - 180, 12);
+        ctx.fillStyle = biz.textColor; ctx.font = 'bold 34px Inter, sans-serif';
+        const line = biz.cardType === 'cashback' ? `Cashback ${biz.percent}% · Saldo: $${progress} MXN` : (biz.cardType === 'coupon' ? `Club VIP · ${progress} visitas acumuladas` : `Avance: ${progress} / ${goal} ${getUnitLabel(biz.cardType)}`);
+        ctx.fillText(line, 90, 320);
+        ctx.font = '500 26px Inter, sans-serif'; ctx.fillText(`Titular: ${holder}`, 90, 380);
+        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(275, 840, 350, 360);
+        try {
+          if (typeof qrcode !== 'undefined') {
+            const qr = qrcode(0, 'M'); qr.addData(`${biz.id}|${code}`); qr.make();
+            const m = qr.getModuleCount(), cell = Math.floor(280 / m), off = 275 + Math.floor((350 - cell * m) / 2);
+            ctx.fillStyle = '#0F172A';
+            for (let r = 0; r < m; r++) for (let c = 0; c < m; c++) if (qr.isDark(r, c)) ctx.fillRect(off + c * cell, 865 + r * cell, cell, cell);
+          }
+        } catch (e) {}
+        ctx.fillStyle = '#0F172A'; ctx.font = 'bold 28px monospace'; ctx.textAlign = 'center'; ctx.fillText(code, 450, 1180); ctx.textAlign = 'left';
+        const link = document.createElement('a'); link.download = `tarjeta-${code.toLowerCase()}.png`; link.href = canvas.toDataURL('image/png'); link.click();
+        showToast(`Tarjeta PNG descargada (${code})`);
+      };
 
-      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(275, 855, 350, 360);
-      try {
-        if (typeof qrcode !== 'undefined') {
-          const qr = qrcode(0, 'M'); qr.addData(`${biz.id}|${code}`); qr.make();
-          const m = qr.getModuleCount(), cell = Math.floor(280 / m), off = 275 + Math.floor((350 - cell * m) / 2);
-          ctx.fillStyle = '#0F172A';
-          for (let r = 0; r < m; r++) for (let c = 0; c < m; c++) if (qr.isDark(r, c)) ctx.fillRect(off + c * cell, 880 + r * cell, cell, cell);
-        }
-      } catch (e) {}
-      ctx.fillStyle = '#0F172A'; ctx.font = 'bold 28px monospace'; ctx.textAlign = 'center'; ctx.fillText(code, 450, 1195); ctx.textAlign = 'left';
-
-      const link = document.createElement('a');
-      link.download = `tarjeta-${code.toLowerCase()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      showToast(`Tarjeta PNG descargada (${code})`);
+      if (biz.bgImageUrl) {
+        const img = new Image();
+        img.onload = () => { ctx.drawImage(img, 0, 0, W, H); finishDraw(); };
+        img.onerror = () => { ctx.fillStyle = biz.bgColor; ctx.fillRect(0, 0, W, H); finishDraw(); };
+        img.src = biz.bgImageUrl;
+      } else {
+        const grad = ctx.createLinearGradient(0, 0, W, H); grad.addColorStop(0, biz.bgColor); grad.addColorStop(1, biz.accentColor);
+        ctx.fillStyle = biz.gradient ? grad : biz.bgColor; ctx.fillRect(0, 0, W, H); finishDraw();
+      }
     }
 
     function openWhatsAppShare(biz, cust) {
@@ -1178,18 +1422,13 @@
       if (phone.length === 10) phone = '52' + phone;
       const baseUrl = window.location.href.split('#')[0];
       const cardUrl = baseUrl.startsWith('http') ? `\n📲 Abre tu tarjeta Android aquí:\n${baseUrl}#/card/${cust.code}` : '';
-      const text = encodeURIComponent(
-        `¡Hola ${cust.name}! 🎉 Aquí tienes tu tarjeta digital de *${biz.name}*.\n` +
-        `🔖 Código: *${cust.code}*\n` +
-        `⭐ Avance actual: *${cust.progress}/${biz.goal} ${getUnitLabel(biz.cardType)}*\n` +
-        `🎁 Premio: *${biz.reward}*${cardUrl}`
-      );
+      const statusTxt = biz.cardType === 'cashback' ? `$${cust.progress} MXN en monedero` : (biz.cardType === 'coupon' ? `${cust.progress} visitas VIP` : `${cust.progress}/${biz.goal} ${getUnitLabel(biz.cardType)}`);
+      const text = encodeURIComponent(`¡Hola ${cust.name}! 🎉 Tu tarjeta digital de *${biz.name}*:\n🔖 Código: *${cust.code}*\n⭐ Estado: *${statusTxt}*${cardUrl}`);
       window.open(`https://wa.me/${phone}?text=${text}`, '_blank', 'noopener');
     }
 
     function openPassModal(custId) {
-      const biz = getActiveBusiness();
-      const cust = state.customers.find(c => c.id === custId);
+      const biz = getActiveBusiness(), cust = state.customers.find(c => c.id === custId);
       if (!biz || !cust) return;
       modalPassCustomerId = custId;
       document.getElementById('modalPassContainer').innerHTML = buildWalletCardHtml(biz, cust, false);
@@ -1197,8 +1436,7 @@
     }
 
     function openStandaloneFromLocal(biz, cust) {
-      standaloneData = { biz, cust };
-      standaloneFlipped = false;
+      standaloneData = { biz, cust }; standaloneFlipped = false;
       document.getElementById('standaloneCardSlot').innerHTML = buildWalletCardHtml(biz, cust, false);
       document.getElementById('btnExitCustomerView').classList.remove('hidden');
       document.getElementById('mainAppShell').classList.add('hidden');
@@ -1211,148 +1449,129 @@
       document.getElementById('authGate').classList.add('hidden');
       document.getElementById('mainAppShell').classList.add('hidden');
       document.getElementById('customerCardView').classList.remove('hidden');
-      document.getElementById('standaloneCardSlot').innerHTML = `<div class="p-8 text-center text-xs text-slate-300">Cargando tu tarjeta...</div>`;
-
+      if (!sb) return;
       const { data, error } = await sb.rpc('get_public_card', { p_code: code });
       if (error || !data || !data.length) {
         document.getElementById('standaloneCardSlot').innerHTML = `<div class="p-6 rounded-2xl bg-white/10 text-center text-xs text-rose-200">No se encontró una tarjeta con el código <strong>${escapeHtml(code)}</strong>.</div>`;
         return;
       }
       const row = data[0];
+      let socials = defaultSocials(), vipTiers = defaultVipTiers();
+      try { if (row.socials_json) socials = Object.assign(defaultSocials(), typeof row.socials_json === 'string' ? JSON.parse(row.socials_json) : row.socials_json); } catch (e) {}
+      try { if (row.vip_tiers_json) vipTiers = typeof row.vip_tiers_json === 'string' ? JSON.parse(row.vip_tiers_json) : row.vip_tiers_json; } catch (e) {}
       const biz = {
         id: row.business_id, name: row.business_name, cardType: row.card_type, cardTitle: row.card_title,
         reward: row.reward, goal: row.goal, percent: row.percent || 10, address: row.address,
         bgColor: row.bg_color, accentColor: row.accent_color, textColor: row.text_color,
         stampIcon: row.stamp_icon, stampImageUrl: row.stamp_image_url || '', logoDataUrl: row.logo_data_url || '',
-        gradient: row.gradient !== false, terms: row.terms
+        bgImageUrl: row.bg_image_url || '', bgOverlay: row.bg_overlay || 55,
+        socials, vipTiers, gradient: row.gradient !== false, terms: row.terms
       };
       const cust = { code: row.code, name: row.customer_name, progress: row.progress, redemptions: row.redemptions };
-      standaloneData = { biz, cust };
-      standaloneFlipped = false;
+      standaloneData = { biz, cust }; standaloneFlipped = false;
       document.getElementById('standaloneCardSlot').innerHTML = buildWalletCardHtml(biz, cust, false);
-      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function openModal(id) { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); }
     function closeModal(id) { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); }
 
     function bindEvents() {
-      // Login Gate tabs
       document.getElementById('gateTabLogin').addEventListener('click', () => {
-        document.getElementById('formAuthLogin').classList.remove('hidden');
-        document.getElementById('formPublicApply').classList.add('hidden');
+        document.getElementById('formAuthLogin').classList.remove('hidden'); document.getElementById('formPublicApply').classList.add('hidden');
         document.getElementById('gateTabLogin').className = 'py-2 rounded-lg bg-white text-slate-900 shadow-xs transition';
         document.getElementById('gateTabApply').className = 'py-2 rounded-lg text-slate-500 hover:text-slate-800 transition';
       });
       document.getElementById('gateTabApply').addEventListener('click', () => {
-        document.getElementById('formAuthLogin').classList.add('hidden');
-        document.getElementById('formPublicApply').classList.remove('hidden');
+        document.getElementById('formAuthLogin').classList.add('hidden'); document.getElementById('formPublicApply').classList.remove('hidden');
         document.getElementById('gateTabApply').className = 'py-2 rounded-lg bg-white text-slate-900 shadow-xs transition';
         document.getElementById('gateTabLogin').className = 'py-2 rounded-lg text-slate-500 hover:text-slate-800 transition';
       });
 
-      // Real Supabase Auth Login
       document.getElementById('formAuthLogin').addEventListener('submit', async e => {
         e.preventDefault();
-        const errBox = document.getElementById('authErrorMsg');
-        errBox.classList.add('hidden');
-        const btn = document.getElementById('btnLoginSubmit');
-        btn.disabled = true; btn.textContent = 'Verificando...';
+        if (!sb) return;
+        const errBox = document.getElementById('authErrorMsg'); errBox.classList.add('hidden');
+        const btn = document.getElementById('btnLoginSubmit'); btn.disabled = true; btn.textContent = 'Verificando...';
         const { data, error } = await sb.auth.signInWithPassword({
           email: document.getElementById('loginEmail').value.trim(),
           password: document.getElementById('loginPass').value
         });
         btn.disabled = false; btn.textContent = 'Entrar de forma segura';
-        if (error) {
-          errBox.textContent = 'Correo o contraseña incorrectos.';
-          errBox.classList.remove('hidden');
-          return;
-        }
+        if (error) { errBox.textContent = 'Correo o contraseña incorrectos.'; errBox.classList.remove('hidden'); return; }
         document.getElementById('loginPass').value = '';
         applySessionUI(data.session);
       });
 
-      // Public Apply Form (with fixed async/await)
       document.getElementById('formPublicApply').addEventListener('submit', async e => {
         e.preventDefault();
-        const box = document.getElementById('applyStatusMsg');
-        const btn = document.getElementById('btnApplySubmit');
+        if (!sb) return;
+        const box = document.getElementById('applyStatusMsg'), btn = document.getElementById('btnApplySubmit');
         btn.disabled = true; btn.textContent = 'Enviando...';
         const { error } = await sb.from('business_requests').insert({
-          id: 'req_' + Date.now(),
-          business_name: document.getElementById('reqBizName').value.trim(),
-          owner: document.getElementById('reqOwner').value.trim(),
-          phone: document.getElementById('reqPhone').value.trim(),
+          id: 'req_' + Date.now(), business_name: document.getElementById('reqBizName').value.trim(),
+          owner: document.getElementById('reqOwner').value.trim(), phone: document.getElementById('reqPhone').value.trim(),
           email: document.getElementById('reqEmail').value.trim().toLowerCase(),
-          goal_desc: document.getElementById('reqGoalDesc').value.trim(),
-          date_label: 'Ahora'
+          goal_desc: document.getElementById('reqGoalDesc').value.trim(), date_label: 'Ahora'
         });
-        btn.disabled = false; btn.textContent = 'Enviar solicitud de alta';
-        box.classList.remove('hidden');
-        if (error) {
-          box.className = 'text-xs font-semibold rounded-xl px-3 py-2 text-rose-700 bg-rose-50 border border-rose-200';
-          box.textContent = 'No se pudo enviar la solicitud. Verifica tu conexión.';
-          return;
-        }
-        e.target.reset();
-        box.className = 'text-xs font-semibold rounded-xl px-3 py-2 text-emerald-700 bg-emerald-50 border border-emerald-200';
-        box.textContent = '¡Solicitud enviada! El administrador de Cardcraft Rewards revisará tu alta y te contactará por WhatsApp.';
+        btn.disabled = false; btn.textContent = 'Enviar solicitud de alta'; box.classList.remove('hidden');
+        if (error) { box.className = 'text-xs font-semibold rounded-xl px-3 py-2 text-rose-700 bg-rose-50 border border-rose-200'; box.textContent = 'No se pudo enviar la solicitud.'; return; }
+        e.target.reset(); box.className = 'text-xs font-semibold rounded-xl px-3 py-2 text-emerald-700 bg-emerald-50 border border-emerald-200';
+        box.textContent = '¡Solicitud enviada! El administrador revisará tu alta y te contactará por WhatsApp.';
       });
 
-      document.getElementById('btnSignOut').addEventListener('click', async () => {
-        await sb.auth.signOut();
-        applySessionUI(null);
-      });
-
+      document.getElementById('btnSignOut').addEventListener('click', async () => { if (sb) await sb.auth.signOut(); applySessionUI(null); });
       document.querySelectorAll('.nav-tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
       document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.closeModal)));
       document.getElementById('btnRefreshAll').addEventListener('click', () => { loadAuthorizedData(); showToast('Datos actualizados'); });
-
-      document.getElementById('businessSelect').addEventListener('change', e => {
-        state.activeBusinessId = e.target.value;
-        state.selectedCustomerId = null;
-        renderAll();
-      });
+      document.getElementById('businessSelect').addEventListener('change', e => { state.activeBusinessId = e.target.value; state.selectedCustomerId = null; renderAll(); });
 
       document.getElementById('btnNewBusiness').addEventListener('click', () => openModal('modalBusiness'));
       document.getElementById('btnAddBizFromList').addEventListener('click', () => openModal('modalBusiness'));
       document.getElementById('btnDeleteBusiness').addEventListener('click', async () => {
         if (state.businesses.length <= 1) { showToast('Conserva al menos 1 negocio'); return; }
-        const id = state.activeBusinessId;
-        await sb.from('businesses').delete().eq('id', id);
-        await loadAuthorizedData();
-        showToast('Negocio eliminado');
+        if (sb) await sb.from('businesses').delete().eq('id', state.activeBusinessId);
+        await loadAuthorizedData(); showToast('Negocio eliminado');
       });
 
       [['inpBizName', 'name'], ['inpOwnerEmail', 'ownerEmail'], ['inpCardTitle', 'cardTitle'], ['inpReward', 'reward'], ['inpAddress', 'address'], ['inpTerms', 'terms'], ['inpBgColor', 'bgColor'], ['inpAccentColor', 'accentColor'], ['inpTextColor', 'textColor']].forEach(([id, key]) => {
-        document.getElementById(id).addEventListener('input', e => {
-          const biz = getActiveBusiness(); if (!biz) return;
-          biz[key] = e.target.value;
-          persistBusiness(biz);
-          renderAll();
-        });
+        document.getElementById(id).addEventListener('input', e => { const b = getActiveBusiness(); if (!b) return; b[key] = e.target.value; persistBusiness(b); renderAll(); });
       });
 
       document.getElementById('inpGoal').addEventListener('input', e => { const b = getActiveBusiness(); if (!b) return; b.goal = Math.max(1, Number(e.target.value) || 1); persistBusiness(b); renderAll(); });
       document.getElementById('inpPercent').addEventListener('input', e => { const b = getActiveBusiness(); if (!b) return; b.percent = Math.min(100, Math.max(1, Number(e.target.value) || 1)); persistBusiness(b); renderAll(); });
+      document.getElementById('inpBgOverlay').addEventListener('input', e => { const b = getActiveBusiness(); if (!b) return; b.bgOverlay = Number(e.target.value); persistBusiness(b); document.getElementById('bgOverlayVal').textContent = b.bgOverlay + '%'; document.getElementById('walletCardPreview').innerHTML = buildWalletCardHtml(b, null, state.previewFlipped); });
       document.getElementById('inpCustomEmoji').addEventListener('input', e => { const v = e.target.value.trim(); const b = getActiveBusiness(); if (!v || !b) return; b.stampIcon = v; b.stampImageUrl = ''; persistBusiness(b); renderAll(); });
       document.getElementById('inpGradient').addEventListener('change', e => { const b = getActiveBusiness(); if (!b) return; b.gradient = e.target.checked; persistBusiness(b); renderAll(); });
 
-      document.getElementById('inpLogoFile').addEventListener('change', e => {
-        const f = e.target.files[0]; if (!f) return;
-        const r = new FileReader(); r.onload = ev => { const b = getActiveBusiness(); b.logoDataUrl = ev.target.result; persistBusiness(b); renderAll(); showToast('Logo guardado'); }; r.readAsDataURL(f);
+      // VIP Tier live bindings
+      [['vipV1', 0, 'visits'], ['vipR1', 0, 'reward'], ['vipV2', 1, 'visits'], ['vipR2', 1, 'reward'], ['vipV3', 2, 'visits'], ['vipR3', 2, 'reward']].forEach(([id, idx, prop]) => {
+        document.getElementById(id).addEventListener('input', e => {
+          const b = getActiveBusiness(); if (!b) return;
+          b.vipTiers[idx][prop] = prop === 'visits' ? Math.max(1, Number(e.target.value) || 1) : e.target.value;
+          persistBusiness(b);
+          document.getElementById('walletCardPreview').innerHTML = buildWalletCardHtml(b, null, state.previewFlipped);
+        });
       });
-      document.getElementById('btnClearLogo').addEventListener('click', () => { const b = getActiveBusiness(); b.logoDataUrl = ''; persistBusiness(b); renderAll(); });
 
-      document.getElementById('inpStampImgFile').addEventListener('change', e => {
-        const f = e.target.files[0]; if (!f) return;
-        const r = new FileReader(); r.onload = ev => { const b = getActiveBusiness(); b.stampImageUrl = ev.target.result; persistBusiness(b); renderAll(); showToast('Imagen de sello guardada'); }; r.readAsDataURL(f);
-      });
-      document.getElementById('btnClearStampImg').addEventListener('click', () => { const b = getActiveBusiness(); b.stampImageUrl = ''; persistBusiness(b); renderAll(); });
+      // Image Uploads (Bg Image, Logo, Stamp Image)
+      const bindImgUpload = (inpId, clearId, field, msg) => {
+        document.getElementById(inpId).addEventListener('change', e => {
+          const f = e.target.files[0]; if (!f) return;
+          const r = new FileReader(); r.onload = ev => { const b = getActiveBusiness(); b[field] = ev.target.result; persistBusiness(b); renderAll(); showToast(msg); }; r.readAsDataURL(f);
+        });
+        document.getElementById(clearId).addEventListener('click', () => { const b = getActiveBusiness(); b[field] = ''; persistBusiness(b); renderAll(); });
+      };
+      bindImgUpload('inpBgImgFile', 'btnClearBgImg', 'bgImageUrl', 'Imagen de fondo aplicada');
+      bindImgUpload('inpLogoFile', 'btnClearLogo', 'logoDataUrl', 'Logo actualizado');
+      bindImgUpload('inpStampImgFile', 'btnClearStampImg', 'stampImageUrl', 'Imagen de sello aplicada');
 
       document.getElementById('btnFlipPreview').addEventListener('click', () => { state.previewFlipped = !state.previewFlipped; syncDesignerInputs(); });
       document.getElementById('btnSimMinus').addEventListener('click', () => { state.simProgress = Math.max(0, state.simProgress - 1); syncDesignerInputs(); });
-      document.getElementById('btnSimPlus').addEventListener('click', () => { const b = getActiveBusiness(); if (!b) return; state.simProgress = Math.min(b.goal, state.simProgress + 1); syncDesignerInputs(); });
+      document.getElementById('btnSimPlus').addEventListener('click', () => {
+        const b = getActiveBusiness(); if (!b) return;
+        const step = b.cardType === 'points' ? 50 : (b.cardType === 'cashback' ? 25 : 1);
+        state.simProgress += step; syncDesignerInputs();
+      });
 
       ['btnQuickIssue', 'btnTerminalNewCustomer', 'btnOpenAddCustomer'].forEach(id => document.getElementById(id).addEventListener('click', () => openModal('modalCustomer')));
       document.getElementById('btnDownloadSamplePng').addEventListener('click', () => downloadCardPng(getActiveBusiness(), null));
@@ -1365,43 +1584,29 @@
         const prefix = biz.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'CCR';
         const code = `${prefix}-${Math.floor(100 + Math.random() * 899)}`;
         const initial = Math.max(0, Number(document.getElementById('custInitial').value) || 0);
-        const c = {
-          id: 'cust_' + Date.now(), businessId: biz.id, code,
-          name: document.getElementById('custName').value.trim(),
-          phone: document.getElementById('custPhone').value.trim(),
-          progress: initial, totalEarned: initial, redemptions: 0, lastVisit: 'Recién creado'
-        };
-        state.customers.unshift(c);
-        state.selectedCustomerId = c.id;
+        const c = { id: 'cust_' + Date.now(), businessId: biz.id, code, name: document.getElementById('custName').value.trim(), phone: document.getElementById('custPhone').value.trim(), progress: initial, totalEarned: initial, redemptions: 0, lastVisit: 'Recién creado' };
+        state.customers.unshift(c); state.selectedCustomerId = c.id;
         await persistCustomer(c);
-        e.target.reset();
-        closeModal('modalCustomer');
-        renderAll();
-        openPassModal(c.id);
+        e.target.reset(); closeModal('modalCustomer'); renderAll(); openPassModal(c.id);
         showToast(`Tarjeta ${code} creada`);
       });
 
       document.getElementById('formBusiness').addEventListener('submit', async e => {
         e.preventDefault();
-        const type = document.getElementById('newBizType').value;
-        const name = document.getElementById('newBizName').value.trim();
+        const type = document.getElementById('newBizType').value, name = document.getElementById('newBizName').value.trim();
         const ownerEmail = document.getElementById('newBizOwnerEmail').value.trim().toLowerCase();
         const newBiz = {
           id: 'biz_' + Date.now(), name, ownerEmail, cardType: type,
-          cardTitle: type === 'cashback' ? `Monedero ${name}` : (type === 'coupon' ? `Pase VIP ${name}` : `Club ${name}`),
-          reward: type === 'cashback' ? 'Saldo acumulable en tienda' : '1 Premio Gratis',
-          goal: type === 'points' ? 500 : (type === 'cashback' ? 200 : 8),
-          percent: 10, address: 'Sucursal Principal', bgColor: '#111827', accentColor: '#6366F1',
-          textColor: '#FFFFFF', stampIcon: '⭐', stampImageUrl: '', logoDataUrl: '', gradient: true,
-          terms: 'Aplica en compras participantes.'
+          cardTitle: type === 'cashback' ? `Monedero ${name}` : (type === 'coupon' ? `Club VIP ${name}` : `Club ${name}`),
+          reward: type === 'cashback' ? 'Dinero electrónico en tienda' : '1 Premio Gratis',
+          goal: type === 'points' ? 500 : 8, percent: 10, address: '', bgColor: '#111827', accentColor: '#6366F1',
+          textColor: '#FFFFFF', stampIcon: '⭐', stampImageUrl: '', logoDataUrl: '', bgImageUrl: '', bgOverlay: 55,
+          socials: defaultSocials(), vipTiers: defaultVipTiers(), gradient: true, terms: 'Aplica en compras participantes.'
         };
-        state.businesses.push(newBiz);
-        state.activeBusinessId = newBiz.id;
+        state.businesses.push(newBiz); state.activeBusinessId = newBiz.id;
         await persistBusiness(newBiz);
-        e.target.reset();
-        closeModal('modalBusiness');
-        renderAll();
-        showToast(`Marca "${name}" creada para ${ownerEmail}`);
+        e.target.reset(); closeModal('modalBusiness'); renderAll();
+        showToast(`Marca "${name}" creada`);
       });
 
       document.getElementById('btnModalPassPng').addEventListener('click', () => { const c = state.customers.find(x => x.id === modalPassCustomerId); if (c) downloadCardPng(getActiveBusiness(), c); });
@@ -1409,15 +1614,10 @@
       document.getElementById('btnModalPassLink').addEventListener('click', () => { const c = state.customers.find(x => x.id === modalPassCustomerId); if (c) openStandaloneFromLocal(getActiveBusiness(), c); });
 
       document.getElementById('btnExitCustomerView').addEventListener('click', () => {
-        document.getElementById('customerCardView').classList.add('hidden');
-        document.getElementById('mainAppShell').classList.remove('hidden');
+        document.getElementById('customerCardView').classList.add('hidden'); document.getElementById('mainAppShell').classList.remove('hidden');
         if (window.location.hash.startsWith('#/card/')) history.replaceState(null, '', window.location.pathname);
       });
-      document.getElementById('btnStandaloneFlip').addEventListener('click', () => {
-        if (!standaloneData) return;
-        standaloneFlipped = !standaloneFlipped;
-        document.getElementById('standaloneCardSlot').innerHTML = buildWalletCardHtml(standaloneData.biz, standaloneData.cust, standaloneFlipped);
-      });
+      document.getElementById('btnStandaloneFlip').addEventListener('click', () => { if (!standaloneData) return; standaloneFlipped = !standaloneFlipped; document.getElementById('standaloneCardSlot').innerHTML = buildWalletCardHtml(standaloneData.biz, standaloneData.cust, standaloneFlipped); });
       document.getElementById('btnStandalonePng').addEventListener('click', () => { if (standaloneData) downloadCardPng(standaloneData.biz, standaloneData.cust); });
       document.getElementById('btnAddAndroidWallet').addEventListener('click', async () => {
         if (deferredInstallPrompt) { deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; return; }
@@ -1426,18 +1626,12 @@
 
       document.getElementById('btnExportCsv').addEventListener('click', () => {
         const biz = getActiveBusiness(); if (!biz) return;
-        const rows = [['Codigo', 'Nombre', 'WhatsApp', 'Progreso', 'Premios'], ...getBusinessCustomers().map(c => [c.code, c.name, c.phone, c.progress, c.redemptions])];
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',')).join('\n')], { type: 'text/csv;charset=utf-8;' }));
-        a.download = `clientes-${biz.name.toLowerCase().replace(/\s+/g, '-')}.csv`;
-        a.click();
+        const rows = [['Codigo', 'Nombre', 'WhatsApp', 'Saldo_Avance', 'Canjes'], ...getBusinessCustomers().map(c => [c.code, c.name, c.phone, c.progress, c.redemptions])];
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',')).join('\n')], { type: 'text/csv;charset=utf-8;' })); a.download = `clientes-${biz.name.toLowerCase().replace(/\s+/g, '-')}.csv`; a.click();
       });
 
       document.getElementById('btnBackupJson').addEventListener('click', () => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify({ businesses: state.businesses, customers: state.customers }, null, 2)], { type: 'application/json' }));
-        a.download = 'cardcraft-respaldo.json';
-        a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ businesses: state.businesses, customers: state.customers }, null, 2)], { type: 'application/json' })); a.download = 'cardcraft-v3-respaldo.json'; a.click();
       });
     }
 
